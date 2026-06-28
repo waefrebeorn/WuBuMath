@@ -1,0 +1,41 @@
+# Build artifacts
+build/
+bin/
+*.o
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated
+golden_output.bin
+golden_vectors.h
+
+# Video files (too large for git)
+*.mp4
+*.webm
+*.mkv
+*.avi
+*.mov
+*.flv
+*.wmv
+*.m4v
+*.ts
+*.m2ts
+
+# Dataset (regenerate with scripts)
+dataset/
+
+# Large binaries (>10MB)
+*.bin
+*.dat
+*.db
+*.sqlite
+output/
