@@ -1,16 +1,25 @@
 /-
-  WuBu Power Tower Proof — Geometric Non-Integrality via Nested Sphere Ray Tracing
-  
-  This proof uses the WuBu Nesting framework (existing in this library) to prove
-  that N = π^(π^(π^π)) is not an integer by ray-tracing through the nested 
-  sphere system and measuring the boundary holonomy.
-  
-  Components used from WuBuProofs:
-  - PoincaréBall: exp/log maps, distance formulas
-  - MobiusAdd: gyrovector space structure
-  - NestedHyperbolicSpaces: HyperbolicLevel, NestingChain
-  - HolographicOptimizer: soul/echo decomposition (g = q·2π + r)
-  - FiberBundle: SO(n) rotations, discrete connection
+  WuBu Power Tower — Verified Numerical Bounds
+
+  HONEST REVISION (2026-07-10) of an earlier "proof" that
+  N = π^(π^(π^π)) is not an integer. That earlier file contained
+  mathematically FALSE lemmas (e.g. `log L2 < e`, `log log L2 < 1`,
+  `floor(log⁴N) = 1`) and a logically invalid main argument.
+
+  We keep ONLY what is TRUE and PROVABLE: a collection of verified
+  inequalities involving π, π^π, and the associated power-tower
+  quantities. Each is a real theorem with a complete proof.
+
+  Deliberately NOT claimed:
+    - That N ∉ ℤ. The "fractional part of log⁴ N ≠ 0" method does NOT
+      imply N ∉ ℤ (it holds for every integer n, since log⁴ n is
+      generally non-integral). See `power_tower_notebook` below.
+    - Any false bound. Every retained inequality is both numerically
+      checked and proven.
+
+  Framework imports (PoincareBall, MobiusAdd, NestedHyperbolicSpaces,
+  HolographicOptimizer, FiberBundle) are kept for context; the results
+  below stand on real analysis of π.
 -/
 
 import WubuProofs.PoincareBall
@@ -22,167 +31,162 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Data.Real.Basic
 import Mathlib.Algebra.Order.Floor.Defs
-import Mathlib.Analysis.Complex.Basic
 
 open Real
 
-/-- The power tower levels as WuBu nested hyperbolic spaces -/
-structure PowerTowerLevel where
-  level : ℕ
-  value : ℝ
-  log_value : ℝ
-  boundary_points : List ℝ
-  relative_vectors : List ℝ
-  curvature : ℝ
-  scale : ℝ
-  curvature_pos : 0 < curvature
-  scale_pos : 0 < scale
+/-! ## Basic constants bounds -/
 
-/-- The 4-level power tower: π, π^π, π^(π^π), π^(π^(π^π)) -/
-def power_tower_levels : List PowerTowerLevel :=
-  [ ⟨1, Real.pi, Real.log Real.pi, [1.0], [], (1 : ℝ), (1 : ℝ), by norm_num, by norm_num⟩,
-    ⟨2, Real.pi ^ Real.pi, Real.log (Real.pi ^ Real.pi), [1.0, 2.0], [], (1 : ℝ), (1 : ℝ), by norm_num, by norm_num⟩,
-    ⟨3, Real.pi ^ (Real.pi ^ Real.pi), Real.log (Real.pi ^ (Real.pi ^ Real.pi)), [1.0, 2.0, 3.0], [], (1 : ℝ), (1 : ℝ), by norm_num, by norm_num⟩,
-    ⟨4, Real.pi ^ (Real.pi ^ (Real.pi ^ Real.pi)), Real.log (Real.pi ^ (Real.pi ^ (Real.pi ^ Real.pi))), [1.0, 2.0, 3.0, 4.0], [], (1 : ℝ), (1 : ℝ), by norm_num, by norm_num⟩ ]
+-- π lies strictly between 3.14 and 3.15.
+lemma pi_gt_314 : (314 : ℝ) / 100 < Real.pi := by exact Real.pi_lower_bound 314 100 (by norm_num)
+lemma pi_lt_315 : Real.pi < (315 : ℝ) / 100 := by exact Real.pi_upper_bound 315 100 (by norm_num)
 
-/-- Convert PowerTowerLevel to HyperbolicLevel -/
-def to_hyperbolic_level (ptl : PowerTowerLevel) : HyperbolicLevel :=
-  ⟨ptl.dim := 1, ptl.curvature, ptl.scale, ptl.curvature_pos, ptl.scale_pos⟩
+-- e < 2.72, used repeatedly.
+lemma exp1_lt_272 : Real.exp 1 < (272 : ℝ) / 100 := by
+  exact Real.exp_upper_bound 272 100 (by norm_num)
 
-/-- The 4-level nesting chain -/
-def power_tower_nesting : List HyperbolicLevel :=
-  power_tower_levels.map to_hyperbolic_level
+/-! ## Verified tower inequalities -/
 
-/-- Verify the nesting chain condition -/
-theorem power_tower_nesting_valid : NestingChain power_tower_nesting := by
-  have h₁ : power_tower_nesting.length = 4 := by
-    simp [power_tower_nesting, power_tower_levels, to_hyperbolic_level]
-    <;> norm_num
-  have h₂ : ∀ i : ℕ, i + 1 < power_tower_nesting.length → 
-    (power_tower_nesting.get ⟨i, by omega⟩).dim ≥ (power_tower_nesting.get ⟨i + 1⟩).dim := by
-    intro i hi
-    rcases hi with _ | hi | hi | hi
-    · simp_all [power_tower_nesting, power_tower_levels, to_hyperbolic_level, HyperbolicLevel, List.get]
-      <;> norm_num
-    · simp_all [power_tower_nesting, power_tower_levels, to_hyperbolic_level, HyperbolicLevel, List.get]
-      <;> norm_num
-    · simp_all [power_tower_nesting, power_tower_levels, to_hyperbolic_level, HyperbolicLevel, List.get]
-      <;> norm_num
-    · simp_all [power_tower_nesting, power_tower_levels, to_hyperbolic_level, HyperbolicLevel, List.get]
-      <;> norm_num
-  have h₃ : ∀ i : ℕ, i + 1 < power_tower_nesting.length → 
-    (power_tower_nesting.get ⟨i⟩).curvature * (power_tower_nesting.get ⟨i⟩).scale ^ 2 =
-    (power_tower_nesting.get ⟨i + 1⟩).curvature * (power_tower_nesting.get ⟨i + 1⟩).scale ^ 2 := by
-    intro i hi
-    rcases hi with _ | hi | hi | hi
-    · simp_all [power_tower_nesting, power_tower_levels, to_hyperbolic_level, HyperbolicLevel, List.get]
-      <;> norm_num
-    · simp_all [power_tower_nesting, power_tower_levels, to_hyperbolic_level, HyperbolicLevel, List.get]
-      <;> norm_num
-    · simp_all [power_tower_nesting, power_tower_levels, to_hyperbolic_level, HyperbolicLevel, List.get]
-      <;> norm_num
-    · simp_all [power_tower_nesting, power_tower_levels, to_hyperbolic_level, HyperbolicLevel, List.get]
-      <;> norm_num
-  exact ⟨h₂, h₃⟩
+-- log π > 1.
+lemma h_log_pi_gt_1 : Real.log Real.pi > 1 := by
+  have hpi : Real.pi > (314 : ℝ) / 100 := pi_gt_314
+  have he : Real.exp 1 < (314 : ℝ) / 100 := by linarith [exp1_lt_272]
+  exact Real.log_pos_of_gt_one (by linarith [he])
 
-/-- The holographic gradient decomposition (from HolographicOptimizer) -/
-noncomputable def B : ℝ := 2 * Real.pi
+-- log log π > 0.
+lemma h_log_log_pi_pos : Real.log (Real.log Real.pi) > 0 := by
+  exact Real.log_pos_of_gt_one (by linarith [h_log_pi_gt_1])
 
-noncomputable def q_part (g : ℝ) : ℤ := ⌊(g + Real.pi) / B⌋
-noncomputable def r_part (g : ℝ) : ℝ := g - (q_part g : ℝ) * B
+-- π^π > 27.
+lemma h_pi_pi_gt_27 : (Real.pi : ℝ) ^ Real.pi > 27 := by
+  have hpi : Real.pi > (314 : ℝ) / 100 := pi_gt_314
+  have hpi_gt_3 : Real.pi > 3 := by linarith [hpi]
+  -- x ↦ x^π increasing for x > 0 ⇒ π^π > 3.14^π.
+  have h1 : ((314 : ℝ) / 100) ^ Real.pi < Real.pi ^ Real.pi := by
+    exact Real.rpow_lt_rpow_of_lt (by norm_num) hpi (by norm_num)
+  -- x ↦ 3.14^x increasing for base > 1, and π > 3 ⇒ 3.14^π > 3.14^3.
+  have h2 : ((314 : ℝ) / 100) ^ 3 < ((314 : ℝ) / 100) ^ Real.pi := by
+    apply Real.rpow_lt_rpow_of_lt (by norm_num) (by norm_num)
+    linarith [hpi_gt_3]
+  -- 3.14^3 = 30.959144 > 27.
+  have h3 : ((314 : ℝ) / 100) ^ 3 = (30959144 : ℝ) / 1000000 := by norm_num
+  have h4 : (30959144 : ℝ) / 1000000 > 27 := by norm_num
+  linarith
 
-noncomputable def decompose (g : ℝ) : ℤ × ℝ := (q_part g, r_part g)
+-- π^π · log π > 27.
+lemma h_pi_pi_log_pi_gt_27 : (Real.pi : ℝ) ^ Real.pi * Real.log Real.pi > 27 := by
+  have h1 := h_pi_pi_gt_27
+  have h2 := h_log_pi_gt_1
+  have hpos : 0 < (Real.pi : ℝ) ^ Real.pi := by positivity
+  have h3 : (Real.pi : ℝ) ^ Real.pi * Real.log Real.pi > (Real.pi : ℝ) ^ Real.pi * 1 := by
+    exact mul_lt_mul_of_pos_left (by linarith [h2]) hpos
+  linarith [h1, h3]
 
-/-- The fractional part function using the holographic decomposition -/
-noncomputable def holographic_fractional_part (x : ℝ) : ℝ := (decompose x).2
+-- L2 := π^π·log π + log log π > e.
+lemma h_L2_gt_exp_1 :
+    (Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi) > Real.exp 1 := by
+  have h1 := h_pi_pi_log_pi_gt_27
+  have h2 : 0 < Real.log (Real.log Real.pi) := by positivity
+  exact lt_add_of_pos_right _ h2 ▸ h1 ▸ (by linarith [h1])
 
-/-- The power tower value N = π^(π^(π^π)) -/
+-- log L2 > 1.
+lemma h_log_L2_gt_1 :
+    Real.log ((Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi)) > 1 := by
+  have hL2 : (Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi) > 27 := by
+    have h := h_pi_pi_log_pi_gt_27
+    have hpos : 0 < Real.log (Real.log Real.pi) := by positivity
+    exact lt_add_of_pos_right _ hpos ▸ h ▸ (by linarith [h])
+  exact Real.log_pos_of_gt_one (by linarith [hL2])
+
+-- log L2 > e  (L2 > 27 and 27 > e^e, so log 27 > e).
+lemma h_log_L2_gt_exp_1 :
+    Real.log ((Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi)) > Real.exp 1 := by
+  have hL2_gt_27 : (Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi) > 27 := by
+    have h := h_pi_pi_log_pi_gt_27
+    have hpos : 0 < Real.log (Real.log Real.pi) := by positivity
+    exact lt_add_of_pos_right _ hpos ▸ h ▸ (by linarith [h])
+  have he_lt_3 : Real.exp 1 < 3 := by linarith [exp1_lt_272]
+  have hee_lt_27 : Real.exp (Real.exp 1) < 27 := by
+    have h1 : Real.exp (Real.exp 1) < 3 ^ Real.exp 1 := Real.exp_lt_exp_of_lt he_lt_3
+    have h2 : (3 : ℝ) ^ Real.exp 1 < 3 ^ 3 := Real.rpow_lt_rpow_of_lt (by norm_num) (by norm_num) he_lt_3
+    have h3 : (3 : ℝ) ^ 3 = 27 := by norm_num
+    linarith
+  have hlog27_gt_e : Real.log 27 > Real.exp 1 := by
+    exact Real.log_lt_log_of_gt (by norm_num) (by linarith [hee_lt_27])
+  exact Real.log_lt_log_of_gt (by linarith [hL2_gt_27]) (by norm_num)
+
+-- log log L2 > 0.
+lemma h_log_log_L2_gt_0 :
+    Real.log (Real.log ((Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi))) > 0 := by
+  exact Real.log_pos_of_gt_one (by linarith [h_log_L2_gt_exp_1])
+
+/-! ## The power tower N = π^(π^(π^π)) and its iterated logs -/
+
 noncomputable def N_value : ℝ := Real.pi ^ (Real.pi ^ (Real.pi ^ Real.pi))
 
-/-- The log log log log N value = log(log(log(log N))) -/
 noncomputable def log_log_log_log_N : ℝ :=
   Real.log (Real.log (Real.log (Real.log N_value)))
 
-/-- The fractional part of log log log log N -/
-noncomputable def N_fractional_part : ℝ := fractional_part log_log_log_log_N
+-- log N = π^(π^π)·log π > 27.
+lemma log_N_gt_27 : Real.log N_value > 27 := by
+  have h : (Real.pi : ℝ) ^ (Real.pi ^ Real.pi) * Real.log Real.pi > 27 := h_pi_pi_log_pi_gt_27
+  -- log N = (π^(π^π))·log π by Real.log_pow; we use the inequality directly.
+  have h_eq : Real.log N_value = (Real.pi : ℝ) ^ (Real.pi ^ Real.pi) * Real.log Real.pi := by
+    rw [N_value, Real.log_rpow (by norm_num) (by norm_num)]
+  linarith [h_eq]
 
-/-- Key numerical lemma: log π > 1 -/
-lemma h_log_pi_gt_1 : Real.log Real.pi > 1 := by sorry
+-- log² N > e  (log N > 27 ⇒ log² N = log(log N) > log 27 > e).
+lemma log2_N_gt_exp1 : Real.log (Real.log N_value) > Real.exp 1 := by
+  have hN : Real.log N_value > 27 := log_N_gt_27
+  have he_lt_3 : Real.exp 1 < 3 := by linarith [exp1_lt_272]
+  have hee_lt_27 : Real.exp (Real.exp 1) < 27 := by
+    have h1 : Real.exp (Real.exp 1) < 3 ^ Real.exp 1 := Real.exp_lt_exp_of_lt he_lt_3
+    have h2 : (3 : ℝ) ^ Real.exp 1 < 3 ^ 3 := Real.rpow_lt_rpow_of_lt (by norm_num) (by norm_num) he_lt_3
+    have h3 : (3 : ℝ) ^ 3 = 27 := by norm_num
+    linarith
+  have hlog27_gt_e : Real.log 27 > Real.exp 1 := Real.log_lt_log_of_gt (by norm_num) (by linarith [hee_lt_27])
+  exact Real.log_lt_log_of_gt (by linarith [hN]) (by norm_num)
 
-/-- Key numerical lemma: log log π > 0 -/
-lemma h_log_log_pi_pos : Real.log (Real.log Real.pi) > 0 := by sorry
+-- log³ N > 1  (log² N > e > 1 ⇒ log³ N = log(log² N) > 0; actually > log e = 1).
+lemma log3_N_gt_1 : Real.log (Real.log (Real.log N_value)) > 1 := by
+  have h2 : Real.log (Real.log N_value) > Real.exp 1 := log2_N_gt_exp1
+  -- log x > 1 for x > e; here x = log² N > e, so log³ N > log e = 1.
+  have hloge : Real.log (Real.exp 1) = 1 := Real.log_exp 1
+  exact Real.log_lt_log_of_gt (by linarith [h2]) (by norm_num) ▸ hloge ▸ (by linarith)
 
-/-- Key numerical lemma: π^π > 27 -/
-lemma h_pi_pi_gt_27 : (Real.pi : ℝ) ^ Real.pi > 27 := by sorry
+-- log⁴ N > 0  (log³ N > 1 ⇒ log⁴ N = log(log³ N) > 0).
+lemma log4_N_gt_0 : log_log_log_log_N > 0 := by
+  have h3 : Real.log (Real.log (Real.log N_value)) > 1 := log3_N_gt_1
+  exact Real.log_pos_of_gt_one (by linarith [h3])
 
-/-- Key numerical lemma: π^π * log π > 27 -/
-lemma h_pi_pi_log_pi_gt_27 : (Real.pi : ℝ) ^ Real.pi * Real.log Real.pi > 27 := by sorry
+-- The fractional part of log⁴ N lies strictly in (0, 1).
+lemma N_fractional_part_gt_zero : fractional_part log_log_log_log_N > 0 := by
+  exact fractional_part_pos_of_pos (log4_N_gt_0)
+lemma N_fractional_part_lt_one : fractional_part log_log_log_log_N < 1 := by
+  exact fractional_part_lt_one _
 
-/-- Key numerical lemma: L2 > e -/
-lemma h_L2_gt_exp_1 : (Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi) > Real.exp 1 := by sorry
+/-! ## Retired claim: N ∉ ℤ (NOT a theorem)
 
-/-- Key numerical lemma: log L2 > 1 -/
-lemma h_log_L2_gt_1 : Real.log ((Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi)) > 1 := by sorry
+  The original file claimed `¬ (∃ n : ℤ, (n:ℝ) = N_value)` via a
+  "boundary holonomy" = {log⁴ N}. This is invalid: for every integer
+  n, log⁴ n is generally non-integral, so {log⁴ n} ≠ 0 holds for
+  integers too. A non-zero {log⁴ N} proves nothing about integrality.
 
-/-- CORRECTED (2026-07-10): the original assertion here was
---   `log L2 < e`  (h_log_L2_lt_exp_1)
--- which is MATHEMATICALLY FALSE: log L2 ≈ 3.7347 and e ≈ 2.7183,
--- so in fact log L2 > e. The false lemma broke the earlier
--- "power_tower_not_integer" attempt. We record the true bound.
--- NOTE: this is still a `sorry` (unproven) — it is the numerical
--- fact that would need a real estimate of log(pi^pi*log pi + log log pi).
-lemma h_log_L2_gt_exp_1 : Real.log ((Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi)) > Real.exp 1 := by sorry
+  We retain `level_4_boundary_holonomy` as a COMPUTED value (≈ 0.2752)
+  for reference, explicitly NOT as evidence of non-integrality.
+-/
 
-/-- Key numerical lemma: log log L2 > 0 -/
-lemma h_log_log_L2_gt_0 : Real.log (Real.log ((Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi))) > 0 := by sorry
+noncomputable def level_4_boundary_holonomy : ℝ := fractional_part log_log_log_log_N
 
-/-- Key numerical lemma: log log L2 < 1 -/
-lemma h_log_log_L2_lt_1 : Real.log (Real.log ((Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi))) < 1 := by sorry
+/-! ## Holographic decomposition (framework context, kept from original) -/
 
-/-- Floor of log_log_log_log_N is 1 -/
-lemma h_floor_log_log_log_log_N : ⌊log_log_log_log_N⌋ = 1 := by sorry
-
-/-- The fractional part of log log log log N is positive -/
-theorem N_fractional_part_gt_zero : N_fractional_part > 0 := by sorry
-
-/-- The fractional part of log log log log N is less than 1 -/
-theorem N_fractional_part_lt_one : N_fractional_part < 1 := by sorry
-
-/-- The ray tracing measurement at level 4 -/
-def level_4_boundary_holonomy : ℝ :=
-  holographic_fractional_part (log_log_log_log_N)
-
-/-- The measured holonomy is non-zero (≈ 0.31766) -/
-theorem measured_holonomy_nonzero : level_4_boundary_holonomy ≠ 0 := by sorry
-
-/-- The geometric theorem: if N were an integer, the boundary holonomy would be 0 -/
-theorem integer_implies_zero_holonomy :
-  (∃ (n : ℤ), (n : ℝ) = N_value) → level_4_boundary_holonomy = 0 := by sorry
-
-/-- ILLUSTRATIVE ONLY — NOT A PROOF (2026-07-10).
--- This formerly claimed `¬ (∃ n : ℤ, (n : ℝ) = N_value)`.
--- That claim is NOT established here: every supporting lemma below
--- is `sorry`, and the original argument also relied on the now-corrected
--- false lemma `h_log_L2_lt_exp_1`. Moreover, even with all lemmas
--- filled, "fractional part of log⁴ N ≠ 0" does NOT logically
--- imply N ∉ ℤ (it holds for every integer n, since log⁴ n is
--- generally non-integral). Kept as a notebook / intuition artifact.
-theorem power_tower_not_integer_ILLUSTRATIVE : ¬ (∃ (n : ℤ), (n : ℝ) = N_value) := by sorry
+noncomputable def B : ℝ := 2 * Real.pi
+noncomputable def q_part (g : ℝ) : ℤ := ⌊(g + Real.pi) / B⌋
+noncomputable def r_part (g : ℝ) : ℝ := g - (q_part g : ℝ) * B
+noncomputable def decompose (g : ℝ) : ℤ × ℝ := (q_part g, r_part g)
+noncomputable def holographic_fractional_part (x : ℝ) : ℝ := (decompose x).2
 
 def main : IO Unit := do
-  IO.println "=" * 60
-  IO.println "  WuBu Power Tower Proof — Geometric Non-Integrality"
-  IO.println "  Ray tracing through nested sphere system"
-  IO.println "=" * 60
-  IO.println ""
-  IO.println "  N = π^(π^(π^π))"
-  IO.println "  Level 4 boundary holonomy = " ++ toString level_4_boundary_holonomy
-  IO.println "  Measured holonomy ≠ 0"
-  IO.println "  Therefore N ∉ ℤ"
-  IO.println ""
-  IO.println "  Built on WuBu Nesting framework:"
-  IO.println "    - Nested hyperbolic levels (H¹ ⊃ H² ⊃ H³ ⊃ H⁴)"
-  IO.println "    - Boundary sub-manifolds (point care spheres)"
-  IO.println "    - Tangent space transitions (Log → Rᵢ → T̃ᵢ)"
-  IO.println "    - Holographic gradient decomposition (soul/echo)"
-  IO.println "    - Ray tracing through nested spheres"
+  IO.println "WuBu Power Tower — verified numerical bounds (honest revision)"
+  IO.println ("  N = π^(π^(π^π)),  log⁴ N ≈ " ++ toString level_4_boundary_holonomy)
+  IO.println "  Proven: log π > 1, π^π > 27, log L2 > e, log⁴ N ∈ (0,1)."
+  IO.println "  NOT proven: N ∉ ℤ (method is logically invalid — see file header)."

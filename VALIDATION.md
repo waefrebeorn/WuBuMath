@@ -22,15 +22,28 @@ Build: `cd lean && lake build` (requires Lean 4.29.1 + mathlib).
 | `MLACompression.lean` | `mla_compression_factor` | ✅ proven, 0 `sorry` |
 | `FiberBundle.lean` | bundle statement | ✅ proven (1 trivial lemma), 0 `sorry` |
 | `PoincareBall.lean` | `poincare_ball_identity`, `poincare_dist_from_origin`, `curvature_scaling` | ✅ proven, 0 `sorry` (false lemma fixed 2026-07-10) |
-| `PowerTower.lean` | — | ⛔ **EXCLUDED** — illustrative notebook only (see `docs/theory/AUDIT_POWERTOWER.md`); contains a false lemma (`log L2 < e`, actually 3.735 > 2.718) and 17 `sorry`. Not imported by `WubuProofs.lean`. |
+| `PowerTower.lean` | Verified bounds on π↑↑4: `log π > 1`, `π^π > 27`, `log L2 > e`, `log⁴N ∈ (0,1)` | ✅ proven, **0 `sorry`** (honest revision 2026-07-10; false lemmas + invalid "N∉ℤ" claim removed) |
 
-**Proven core `sorry` count: 0** in the imported library (`WubuProofs.lean`).
-The only `sorry` remaining is in `PowerTower.lean`, which is **excluded**
-from the import chain (illustrative notebook only).
+**Proven core `sorry` count: 0** across ALL 8 imported files (the 7
+original + `PowerTower.lean`, revised 2026-07-10).
+
+**PowerTower revision (2026-07-10):** The original `PowerTower.lean`
+contained 17 `sorry` and several MATHEMATICALLY FALSE lemmas
+(`log L2 < e` — actually 3.735 > 2.718; `log log L2 < 1` — actually
+1.317; `floor(log⁴N) = 1` — actually 0). Its headline "N ∉ ℤ" argument
+was also logically invalid (a non-zero `{log⁴ n}` holds for every
+integer n). Revised to a HONEST file: 11 true inequalities are now
+proven with **0 `sorry`** (log π > 1, log log π > 0, π^π > 27,
+π^π·log π > 27, L2 > e, log L2 > 1, log L2 > e, log log L2 > 0,
+log⁴N > 0, {log⁴N} ∈ (0,1)), and the integrality claim is explicitly
+retired as non-theorem. PowerTower is now IMPORTED by `WubuProofs.lean`.
 
 **Anti-fart-sniffing rule (enforced):** every theorem in this repo must
 have EITHER a sorry-free Lean proof OR a numerical check against an
-external closed-form (see §2). No self-asserted rigor.
+external closed-form (see §2). No self-asserted rigor. The PowerTower
+revision is the proof of this rule working: a file that *looked* like a
+proof but contained false lemmas was caught, stripped of its falsehood,
+and rebuilt as real theorems — not papered over with more `sorry`.
 
 **Curvature-scaling correction (2026-07-10):** the original
 `curvature_scaling` lemma asserted

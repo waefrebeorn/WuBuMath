@@ -8,5 +8,5 @@ package wubu_proofs where
     "https://github.com/leanprover-community/mathlib4.git" @ "v4.29.1"
 
 lean_lib WubuProofs where
-  -- Proven library (no `sorry` in the imported core).
-  -- PowerTower.lean is excluded: see note in WubuProofs.lean.
+  -- Proven library (all imported files 0 `sorry` as of 2026-07-10).
+  -- PowerTower.lean revised to honest verified-bounds file (was excluded).

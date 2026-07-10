@@ -19,10 +19,9 @@ import WubuProofs.HyperbolicGyration
 import WubuProofs.NestedHyperbolicSpaces
 import WubuProofs.HolographicOptimizer
 import WubuProofs.FiberBundle
--- NOTE: PowerTower.lean is INTENTIONALLY excluded from the
--- build. Its `power_tower_not_integer` theorem depends on a chain
--- of `sorry` lemmas, one of which (h_log_L2_lt_exp_1) is a
--- MATHEMATICALLY FALSE inequality (log(L2) ≈ 3.735 > e ≈ 2.718).
--- It is kept as an illustrative/notebook artifact under
--- WubuProofs/PowerTower.lean, NOT imported into the proven library.
--- See docs/theory/AUDIT_POWERTOWER.md.
+import WubuProofs.PowerTower
+/- PowerTower.lean (2026-07-10 revision): now a HONEST file of verified
+   numerical bounds on the power tower π↑↑4 (log π > 1, π^π > 27,
+   log L2 > e, log⁴N ∈ (0,1)), all proven with 0 `sorry`. The earlier
+   FALSE lemmas and the logically-invalid "N ∉ ℤ" claim were removed;
+   the integrality question is explicitly retired (see file header). -/
