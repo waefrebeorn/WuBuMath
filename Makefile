@@ -212,7 +212,14 @@ $(BIN)/test_vhf_engine: $(SRC)/tests/test_vhf_engine.c $(SRC)/model/wubu_vhf_eng
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $< $(SRC)/model/wubu_vhf_engine.c $(SRC)/train/wubu_q_controller.c $(SRC)/train/wubu_loss.c $(SRC)/math/wubu_color.c $(SRC)/math/wubu_utils.c -o $@ $(LDFLAGS)
 
-test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
+# Analytical validation contract (anti-fart-sniffing guard):
+# pins each hyperbolic/Mobius kernel to its CLOSED-FORM formula
+# (same formula proven in lean/WubuProofs/*.lean).
+$(BIN)/test_hyperbolic_analytics: $(SRC)/tests/test_hyperbolic_analytics.c $(SRC)/math/wubu_hyperbolic.c $(SRC)/math/wubu_parallel_transport.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) $(SRC)/math/wubu_hyperbolic.c $(SRC)/math/wubu_parallel_transport.c $< -o $@ $(LDFLAGS)
+
+test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
 	@echo "=== VHF Engine Tests ===" && $(BIN)/test_vhf_engine
 	@echo "=== WuBuMath Tests ===" && $(BIN)/wubu_tests
 	@echo "=== Slermed JAX Tests ===" && $(BIN)/jax_test
