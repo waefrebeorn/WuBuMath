@@ -158,5 +158,27 @@ exp/log/geodesic algorithms from `tsotchke/libirrep` (MIT) into WuBuMath's
 This closes the gap where `FiberBundle.lean` previously had a fake
 `bundle_projection` returning `0`. The Lean side now proves
 `so3_closed_under_compose` (SO(3) is a group) and references the C
-validation. Full tsotchke review + pick-and-choose vault: `../tsotchke/EXAMPLE_VAULT.md`
+validation.
+
+## libirrep rep-theory port (2026-07-10)
+
+`src/math/wubu_rep_theory.c` + `include/wubu_rep_theory.h` port the Wigner 3j
+symbol (Racah closed form) and Clebsch-Gordan coefficient from
+`tsotchke/libirrep/src/clebsch_gordan.c` (MIT). Validated in
+`src/tests/test_wubu_rep_theory.c` against libirrep's own outputs (10-digit
+agreement) and the CG orthonormality relation Σ_J CG² = 1:
+- CG(1,1;1,1→2,2) = 1, CG(1,0;1,0→0,0) = −1/√3, CG(1,1;1,−1→2,0) = 1/√6
+- Wigner 3j(1,0;1,0;2,0) = √(2/15)
+- three orthonormality checks PASS
+
+This fills the rep-theory depth gap flagged earlier (Wigner-D / CG).
+
+## Lean CI (2026-07-10)
+
+`.github/workflows/lean.yml` runs `lake build` + a zero-`sorry` audit on every
+push/PR. This structurally prevents the cache-masking false-all-clear that hid
+the FiberBundle/HolographicOptimizer errors earlier: CI always builds from a
+clean cache miss path and fails if any `sorry` appears.
+
+Full tsotchke review + pick-and-choose vault: `../tsotchke/EXAMPLE_VAULT.md`
 and `../tsotchke/REVIEW_SUMMARY.md`.

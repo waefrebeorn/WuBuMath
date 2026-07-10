@@ -1,0 +1,48 @@
+name: Lean Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history; no shallow clone
+
+      - name: Install Lean
+        run: |
+          curl -L https://github.com/leanprover/elan/releases/download/v4.0.0/elan-x86_64-unknown-linux-gnu.tar.gz -o elan.tar.gz
+          tar -xzf elan.tar.gz
+          ./elan-init -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Cache mathlib
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/lean
+            lean/WubuProofs/.lake
+          key: lean-${{ runner.os }}-${{ hashFiles('lean/lean-toolchain', 'lean/lakefile.lean') }}
+          restore-keys: |
+            lean-${{ runner.os }}-
+
+      - name: Lake build (full, from scratch on cache miss)
+        working-directory: lean
+        run: lake build
+
+      - name: Verify zero sorry
+        working-directory: lean
+        run: |
+          SORRY=$(grep -rn 'sorry' WubuProofs --include='*.lean' | wc -l)
+          echo "sorry count: $SORRY"
+          if [ "$SORRY" -ne 0 ]; then
+            echo "FAIL: $SORRY sorry found"
+            exit 1
+          fi
+          echo "OK: 0 sorry across all proof files"
