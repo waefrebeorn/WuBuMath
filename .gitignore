@@ -14,9 +14,13 @@ bin/
 .DS_Store
 Thumbs.db
 
-# Generated
-golden_output.bin
-golden_vectors.h
+# Lean build cache (11GB+) — never commit
+lean/.lake/
+**/.lake/
+
+# Lean build artifacts
+*.trace
+*.olean
 
 # Video files (too large for git)
 *.mp4

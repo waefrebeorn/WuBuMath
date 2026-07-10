@@ -150,6 +150,29 @@ WuBuMath/
 | [bytropix](https://github.com/waefrebeorn/bytropix) | Inference engine (C server, GPU kernels) |
 | **WuBuMath** | **All math, encoders, media generation** ← you are here |
 
+## Math Consolidation (2026-07-10)
+
+WuBuMath is the **canonical home for all WuBu math**. The following were
+migrated out of `bytropix` so the math stops being scattered:
+
+- **`lean/`** — the WuBu Nesting **formal-proof library** (Lean 4 / Mathlib).
+  Proven core: Möbius-addition-closes-Poincaré-ball, hyperbolic
+  gyration identity, holographic soul/echo optimizer (`g = q·2π + r`),
+  nested-hyperbolic curvature invariants, low-rank KV compression.
+  `PowerTower.lean` is kept as an *illustrative notebook only* — it is
+  **not** a proof (false lemma + `sorry` chain; see `docs/theory/AUDIT_POWERTOWER.md`).
+- **`docs/theory/`** — the THEORY writeups (`WuBu_Nesting.md`,
+  `WuBuHypCD.tex`, spatio-temporal nesting), the `math_viz/`
+  visualization scripts, and the curated `papers/` set.
+
+**Deliberately NOT migrated** (stays in `bytropix`):
+- The 11 GB Lean `.lake` build cache (git-ignored anyway).
+- 117 Python encoder/attention prototypes — WuBuMath's charter is
+  *Zero Python*; those live in bytropix `ATTENTION/`, `ENCODERS/`, etc.
+- Inference-internal C kernels (`wubu_ssm*.cu`, Poincaré-GQA
+  backward, MoE-hyperbolic, attention) — those are the *inference
+  engine*, not pure math.
+
 ## License
 
 MIT License — WuBu Slermes Project
