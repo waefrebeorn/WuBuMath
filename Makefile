@@ -24,6 +24,7 @@ SRCS = $(SRC)/math/wubu_color.c \
        $(SRC)/train/wubu_latent_codec.c \
        $(SRC)/math/wubu_quaternion_ops.c \
        $(SRC)/math/wubu_parallel_transport.c \
+       $(SRC)/math/wubu_so3.c \
        $(SRC)/train/wubu_tangent_flow.c \
        $(SRC)/train/wubu_flow_matching.c \
        $(SRC)/train/wubu_riemannian_sgd.c \
@@ -98,6 +99,11 @@ $(BIN)/test_hyperbolic: $(SRC)/tests/test_wubu_hyperbolic.c $(SRC)/math/wubu_hyp
 $(BIN)/test_quaternion: $(SRC)/tests/test_wubu_quaternion.c $(SRC)/math/wubu_quaternion.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $(SRC)/math/wubu_quaternion.c $< -o $@ $(LDFLAGS)
+
+# SO(3) exp/log/geodesic port from libirrep (numerical validation)
+$(BIN)/test_so3: $(SRC)/tests/test_wubu_so3.c $(SRC)/math/wubu_so3.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) $(SRC)/math/wubu_so3.c $< -o $@ $(LDFLAGS)
 
 # Quaternion operations tests (Hamilton product, SLERP, Poincaré, etc.)
 $(BIN)/test_quat_ops: $(SRC)/tests/test_wubu_quaternion_ops.c $(SRC)/math/wubu_quaternion_ops.c $(SRC)/math/wubu_hyperbolic.c $(SRC)/math/wubu_quaternion.c
@@ -219,13 +225,14 @@ $(BIN)/test_hyperbolic_analytics: $(SRC)/tests/test_hyperbolic_analytics.c $(SRC
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $(SRC)/math/wubu_hyperbolic.c $(SRC)/math/wubu_parallel_transport.c $< -o $@ $(LDFLAGS)
 
-test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
+test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_so3 $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
 	@echo "=== VHF Engine Tests ===" && $(BIN)/test_vhf_engine
 	@echo "=== WuBuMath Tests ===" && $(BIN)/wubu_tests
 	@echo "=== Slermed JAX Tests ===" && $(BIN)/jax_test
 	@echo "=== NN Layer Tests ===" && $(BIN)/nn_test
 	@echo "=== Hyperbolic Geometry Tests ===" && $(BIN)/test_hyperbolic
 	@echo "=== Quaternion Tests ===" && $(BIN)/test_quaternion
+	@echo "=== SO(3) exp/log/geodesic (libirrep port) ===" && $(BIN)/test_so3
 	@echo "=== Riemannian SGD Tests ===" && $(BIN)/test_riemannian_sgd
 	@echo "=== Parallel Transport Tests ===" && $(BIN)/test_parallel_transport
 	@echo "=== Tangent Flow Tests ===" && $(BIN)/test_tangent_flow

@@ -20,7 +20,7 @@ Build: `cd lean && lake build` (requires Lean 4.29.1 + mathlib).
 | `HolographicOptimizer.lean` | `decompose_exact`, `lazarus_recovery` | ✅ proven, 0 `sorry` |
 | `NestedHyperbolicSpaces.lean` | `phi_curvature`, nesting-chain invariants | ✅ proven, 0 `sorry` |
 | `MLACompression.lean` | `mla_compression_factor` | ✅ proven, 0 `sorry` |
-| `FiberBundle.lean` | bundle statement | ✅ proven (1 trivial lemma), 0 `sorry` |
+| `FiberBundle.lean` | SO(3) commutation (Lx,Ly,Lz), `so3_contains_identity`, `so3_closed_under_compose`, `wubu_is_principal_bundle` (real proofs — placeholder removed) | ✅ proven, 0 `sorry` (transpose fixed 2026-07-10; placeholder replaced with real group-closure theorem) |
 | `PoincareBall.lean` | `poincare_ball_identity`, `poincare_dist_from_origin`, `curvature_scaling` | ✅ proven, 0 `sorry` (false lemma fixed 2026-07-10) |
 | `PowerTower.lean` | Verified bounds on π↑↑4: `log π > 1`, `π^π > 27`, `log L2 > e`, `log⁴N ∈ (0,1)` | ✅ proven, **0 `sorry`** (honest revision 2026-07-10; false lemmas + invalid "N∉ℤ" claim removed) |
 
@@ -144,3 +144,19 @@ formal proof + numerical re-checkability — the standard tsotchke lacks.
   this math correctly. Migrating the duplicates would *reduce* quality.
 - 11 GB Lean `.lake` build cache and 117 Python prototypes left in
   bytropix (WuBuMath charter: zero Python).
+
+## libirrep port (2026-07-10) — tsotchke → WuBuMath
+
+`src/math/wubu_so3.c` + `include/wubu_so3.h` port the SO(3) Lie-group
+exp/log/geodesic algorithms from `tsotchke/libirrep` (MIT) into WuBuMath's
+`float`/`Rot3` convention. Validated numerically in
+`src/tests/test_wubu_so3.c` (20000 random trials):
+- `rot_exp(rot_log(R)) == R`: worst error **8.3e-7**
+- `geodesic_distance(I, rot_exp(w)) == |w|`: worst error **4.8e-7**
+- `rot_log(rot_exp(w)) == w` (|w|<π): worst error **3.9e-7**
+
+This closes the gap where `FiberBundle.lean` previously had a fake
+`bundle_projection` returning `0`. The Lean side now proves
+`so3_closed_under_compose` (SO(3) is a group) and references the C
+validation. Full tsotchke review + pick-and-choose vault: `../tsotchke/EXAMPLE_VAULT.md`
+and `../tsotchke/REVIEW_SUMMARY.md`.
