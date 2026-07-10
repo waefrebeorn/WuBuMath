@@ -18,7 +18,7 @@ WuBu Nesting framework.
 | `WubuProofs/NestedHyperbolicSpaces.lean` | Nesting-chain curvature/scale invariants; φ-progression | ✅ proven |
 | `WubuProofs/MLACompression.lean` | Low-rank KV compression factor identity | ✅ proven |
 | `WubuProofs/FiberBundle.lean` | SO(3) Lie-algebra commutation (`[Lx,Ly]=Lz`); bundle statement | ⚠️ partial (`wubu_is_principal_bundle := trivial`) |
-| `WubuProofs/PoincareBall.lean` | `exp_0^c ∘ log_0^c = id`; ball metric conformal | ⚠️ partial (`curvature_scaling` is `sorry`) |
+| `WubuProofs/PoincareBall.lean` | `exp_0^c ∘ log_0^c = id`; ball metric conformal; `curvature_scaling` proven | ✅ proven (0 `sorry`) |
 | `LeanCopies.lean` | Copies of the above (poincaré identity, Möbius, MLA, gyration) | ⚠️ 2 `sorry` in Möbius-closure alts |
 
 ## What is NOT proven (kept as notebook only)

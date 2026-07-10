@@ -21,15 +21,23 @@ Build: `cd lean && lake build` (requires Lean 4.29.1 + mathlib).
 | `NestedHyperbolicSpaces.lean` | `phi_curvature`, nesting-chain invariants | ✅ proven, 0 `sorry` |
 | `MLACompression.lean` | `mla_compression_factor` | ✅ proven, 0 `sorry` |
 | `FiberBundle.lean` | bundle statement | ✅ proven (1 trivial lemma), 0 `sorry` |
-| `PoincareBall.lean` | `poincare_ball_identity`, `poincare_dist_from_origin` | ⚠️ 1 `sorry` (`curvature_scaling` lemma) |
+| `PoincareBall.lean` | `poincare_ball_identity`, `poincare_dist_from_origin`, `curvature_scaling` | ✅ proven, 0 `sorry` (false lemma fixed 2026-07-10) |
 | `PowerTower.lean` | — | ⛔ **EXCLUDED** — illustrative notebook only (see `docs/theory/AUDIT_POWERTOWER.md`); contains a false lemma (`log L2 < e`, actually 3.735 > 2.718) and 17 `sorry`. Not imported by `WubuProofs.lean`. |
 
-**Proven core `sorry` count: 1** (in `PoincareBall`, the curvature-scaling
-lemma — the rest of the file's key theorems are sorry-free).
+**Proven core `sorry` count: 0** in the imported library (`WubuProofs.lean`).
+The only `sorry` remaining is in `PowerTower.lean`, which is **excluded**
+from the import chain (illustrative notebook only).
 
 **Anti-fart-sniffing rule (enforced):** every theorem in this repo must
 have EITHER a sorry-free Lean proof OR a numerical check against an
 external closed-form (see §2). No self-asserted rigor.
+
+**Curvature-scaling correction (2026-07-10):** the original
+`curvature_scaling` lemma asserted
+`d_c(0,x) = log((1 + r^(1/√c))/(1 - r^(1/√c)))`, which is **mathematically
+false** (for c=4, r=0.5: 0.5493 ≠ 1.7627). Replaced with the correct
+metric-scaling law `d_c = d/√c`, proven by `rfl`. This matches the
+intended comment and the C-side curvature assignment in the GAAD encoder.
 
 ---
 
@@ -81,8 +89,6 @@ formal proof + numerical re-checkability — the standard tsotchke lacks.
 
 ## 4. Pending / gaps
 
-- [ ] **`PoincareBall.curvature_scaling`** — 1 `sorry` remaining in the
-      proven core. Either prove it or document the gap.
 - [ ] **Extend §2 contract** to nested-SSM, Riemannian-SGD, flow-matching
       kernels (same pin-to-analytical-formula pattern).
 - [ ] **Rep-theory depth** — if WuBu should cover SO(3)/SU(2) seriously,

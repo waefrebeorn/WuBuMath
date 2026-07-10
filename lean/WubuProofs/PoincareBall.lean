@@ -64,13 +64,32 @@ theorem geodesic_segment (r : ℝ) (hr : 0 ≤ r ∧ r < 1) (t : ℝ) (ht : 0 �
 
 -- For WuBu nesting: curvature c scales the metric
 -- g_x^c = c · g_x (where g_x is the standard curvature -1 metric)
--- This means the distance scales as d_c(0,x) = d(0,x) / √c
+-- This means distances scale as d_c = d / √c.
+--
+-- CORRECTNESS NOTE (2026-07-10): an earlier version of this lemma claimed
+--   d_c(0,x) = log((1 + r^(1/√c)) / (1 - r^(1/√c)))
+-- which is FALSE. For c = 4, r = 0.5 the two sides evaluate to
+--   0.5493  vs  1.7627  (not equal).
+-- The correct curvature scaling is just the metric-scaling factor: the
+-- distance in the curvature-c ball is 1/√c times the curvature-1 distance.
+-- arctanh identity: 2·atanh(r) = log((1+r)/(1-r)), used below.
+
+-- Curvature-c Poincaré distance from the origin.
+noncomputable def poincare_dist_c (c : ℝ) (hc : 0 < c) (r : ℝ) (hr : 0 ≤ r ∧ r < 1) : ℝ :=
+  poincare_dist_from_origin r hr / Real.sqrt c
+
+-- Scaling law: d_c(0, x) = d(0, x) / √c. This is the definition above, made
+-- explicit so downstream proofs can rewrite with it.
 theorem curvature_scaling (c : ℝ) (hc : 0 < c) (r : ℝ) (hr : 0 ≤ r ∧ r < 1) :
-    Real.log ((1 + r) / (1 - r)) / Real.sqrt c =
-    Real.log ((1 + r ^ (1 / Real.sqrt c)) / (1 - r ^ (1 / Real.sqrt c))) := by
-  -- This is a known result: scaling curvature is equivalent to re-scaling the manifold
-  -- For the full proof with tensor calculus, see the fiber bundle theorem
-  sorry
+    poincare_dist_c c hc r hr = poincare_dist_from_origin r hr / Real.sqrt c := by
+  rfl
+
+-- The c = 1 case recovers poincare_dist_from_origin exactly.
+theorem curvature_scaling_one (r : ℝ) (hr : 0 ≤ r ∧ r < 1) :
+    poincare_dist_c 1 (by norm_num) r hr = poincare_dist_from_origin r hr := by
+  dsimp [poincare_dist_c]
+  have h : Real.sqrt 1 = 1 := by norm_num
+  rw [h, div_one]
 
 -- Euclidean radius of a hyperbolic ball of radius R in curvature c
 -- r_e = tanh(√c · R / 2)

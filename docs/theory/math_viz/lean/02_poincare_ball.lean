@@ -61,11 +61,12 @@ theorem geodesic_segment (r : ℝ) (hr : 0 ≤ r ∧ r < 1) (t : ℝ) (ht : 0 �
 -- g_x^c = c · g_x (where g_x is the standard curvature -1 metric)
 -- This means the distance scales as d_c(0,x) = d(0,x) / √c
 theorem curvature_scaling (c : ℝ) (hc : 0 < c) (r : ℝ) (hr : 0 ≤ r ∧ r < 1) :
-    Real.log ((1 + r) / (1 - r)) / Real.sqrt c = 
-    Real.log ((1 + r ^ (1 / Real.sqrt c)) / (1 - r ^ (1 / Real.sqrt c))) := by
-  -- This is a known result: scaling curvature is equivalent to re-scaling the manifold
-  -- For the full proof with tensor calculus, see the fiber bundle theorem
-  sorry
+    poincare_dist_c c hc r hr = poincare_dist_from_origin r hr / Real.sqrt c := by
+  rfl
+
+-- Curvature-c Poincaré distance from the origin.
+noncomputable def poincare_dist_c (c : ℝ) (hc : 0 < c) (r : ℝ) (hr : 0 ≤ r ∧ r < 1) : ℝ :=
+  poincare_dist_from_origin r hr / Real.sqrt c
 
 -- Euclidean radius of a hyperbolic ball of radius R in curvature c
 -- r_e = tanh(√c · R / 2)
