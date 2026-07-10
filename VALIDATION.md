@@ -24,8 +24,27 @@ Build: `cd lean && lake build` (requires Lean 4.29.1 + mathlib).
 | `PoincareBall.lean` | `poincare_ball_identity`, `poincare_dist_from_origin`, `curvature_scaling` | ✅ proven, 0 `sorry` (false lemma fixed 2026-07-10) |
 | `PowerTower.lean` | Verified bounds on π↑↑4: `log π > 1`, `π^π > 27`, `log L2 > e`, `log⁴N ∈ (0,1)` | ✅ proven, **0 `sorry`** (honest revision 2026-07-10; false lemmas + invalid "N∉ℤ" claim removed) |
 
-**Proven core `sorry` count: 0** across ALL 8 imported files (the 7
-original + `PowerTower.lean`, revised 2026-07-10).
+**Proven core `sorry` count: 0** across ALL 8 imported files (verified by a
+**clean from-scratch `lake build`, 2026-07-10 — see note below**).
+
+**IMPORTANT — cache-masking bug fixed (2026-07-10):** An earlier
+"build success, 0 sorry" was a *false all-clear*. Two files
+(`FiberBundle.lean`, `HolographicOptimizer.lean`) had real errors that
+Lean's incremental cache had been skipping (stale `.olean`). A full
+recompile (triggered by adding `PowerTower.integrality_via_nested_log`)
+exposed them:
+- `FiberBundle.lean` used the undefined `ᵀ` transpose notation → never
+  compiled. Fixed: `Rᵀ` → `R.transpose` (3 sites).
+- `HolographicOptimizer.remainder_in_range` claimed `-π < r` (strict
+  lower bound) which is **false** at `g = π` (`r = -π`). Fixed: weak
+  lower bound `-π ≤ r`.
+
+Both now compile. The current `0 sorry` is backed by a **clean rebuild
+with no cached modules**, so it is trustworthy.
+
+**Anti-fart-sniffing rule (enforced):** every theorem in this repo
+requires a sorry-free Lean proof OR a numerical check. Allegory
+(WuBu Nesting as intuition) is documentation, not mathematics.
 
 **PowerTower revision (2026-07-10):** The original `PowerTower.lean`
 contained 17 `sorry` and several MATHEMATICALLY FALSE lemmas

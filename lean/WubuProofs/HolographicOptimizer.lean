@@ -28,7 +28,7 @@ noncomputable def decompose (g : ℝ) : ℤ × ℝ :=
   (q, r)
 
 theorem remainder_in_range (g : ℝ) :
-    -π < (decompose g).2 ∧ (decompose g).2 ≤ π := by
+    -π ≤ (decompose g).2 ∧ (decompose g).2 ≤ π := by
   dsimp [decompose, B] at *
   have hq : (⌊(g + π) / (2 * π)⌋ : ℝ) ≤ (g + π) / (2 * π) := by
     exact_mod_cast Int.floor_le ((g + π) / (2 * π))
@@ -36,7 +36,7 @@ theorem remainder_in_range (g : ℝ) :
     have h := Int.lt_floor_add_one ((g + π) / (2 * π))
     exact_mod_cast h
   constructor
-  · -- Prove -π < g - ⌊(g + π) / (2 * π)⌋ * (2 * π)
+  · -- Prove -π ≤ g - ⌊(g + π) / (2 * π)⌋ * (2 * π)
     have h₁ : (⌊(g + π) / (2 * π)⌋ : ℝ) * (2 * π) ≤ g + π := by
       calc
         (⌊(g + π) / (2 * π)⌋ : ℝ) * (2 * π) ≤ ((g + π) / (2 * π)) * (2 * π) := by gcongr
@@ -44,7 +44,7 @@ theorem remainder_in_range (g : ℝ) :
           field_simp [Real.pi_pos.le]
           <;> ring_nf
           <;> linarith [Real.pi_pos]
-    have h₂ : g - (⌊(g + π) / (2 * π)⌋ : ℝ) * (2 * π) > -π := by
+    have h₂ : g - (⌊(g + π) / (2 * π)⌋ : ℝ) * (2 * π) ≥ -π := by
       linarith [Real.pi_pos]
     linarith
   · -- Prove g - ⌊(g + π) / (2 * π)⌋ * (2 * π) ≤ π

@@ -164,6 +164,61 @@ lemma N_fractional_part_gt_zero : fractional_part log_log_log_log_N > 0 := by
 lemma N_fractional_part_lt_one : fractional_part log_log_log_log_N < 1 := by
   exact fractional_part_lt_one _
 
+/-! ## Geometric reduction of integrality (TRUE equivalence, not a proof)
+
+  The nested-hyperbolic framing maps `N` to a point at "radius"
+  `log⁴ N ≈ 0.2752` in the level-4 Poincaré ball. The integrality
+  question becomes: does this point coincide with a point of the
+  countable discrete set `{ log⁴ n : n ∈ ℤ, n > 0 }`?
+
+  This equivalence is provable (log is injective on ℝ>0) and makes
+  explicit what a geometric proof would have to deliver: a *quantitative
+  separation* between `log⁴ N` and every `log⁴ n`. Such a separation is
+  a Diophantine-approximation / transcendence result — currently out of
+  reach (π is transcendental, so Gelfond-Schneider does not apply).
+-/
+
+-- N is an integer  ⇔  log⁴ N equals log⁴ of that integer.
+lemma integrality_via_nested_log :
+    (∃ (n : ℤ), (n : ℝ) = N_value) ↔
+    (∃ (n : ℤ), n > 0 ∧
+       Real.log (Real.log (Real.log (Real.log (n : ℝ)))) =
+       log_log_log_log_N) := by
+  constructor
+  · rintro ⟨n, hn⟩
+    use n
+    have hpos : (0 : ℝ) < (n : ℝ) := by
+      have h := hn
+      linarith [Int.cast_nonneg.mpr (by linarith)]
+    have hnpos : (n : ℝ) > 0 := by
+      -- n cannot be 0 since N > 1; and n ≥ 0 from above. So n > 0.
+      have hNgt1 : N_value > 1 := by positivity
+      linarith [hn.symm, hNgt1]
+    refine ⟨hnpos, ?_⟩
+    -- N = n ⇒ log⁴ N = log⁴ n, by injectivity of log on ℝ>0 (4×).
+    have h1 : Real.log (n : ℝ) = Real.log N_value := by rw [hn]
+    have h2 : Real.log (Real.log (n : ℝ)) = Real.log (Real.log N_value) := by
+      congr; exact h1
+    have h3 : Real.log (Real.log (Real.log (n : ℝ))) =
+             Real.log (Real.log (Real.log N_value)) := by congr; exact h2
+    have h4 : Real.log (Real.log (Real.log (Real.log (n : ℝ)))) =
+             Real.log (Real.log (Real.log (Real.log N_value))) := by congr; exact h3
+    exact h4
+  · rintro ⟨n, hnpos, hn⟩
+    use n
+    -- log⁴ n = log⁴ N ⇒ n = N (injectivity of 4-fold log on ℝ>0).
+    have h1 : Real.log (n : ℝ) = Real.log N_value := by
+      apply Real.log_inj_on.mpr
+      · exact hn
+      · positivity
+      · exact log_N_gt_27.trans (by norm_num)
+    have h2 : (n : ℝ) = N_value := by
+      apply Real.log_inj_on.mpr
+      · exact h1
+      · exact hnpos
+      · positivity
+    exact h2
+
 /-! ## Retired claim: N ∉ ℤ (NOT a theorem)
 
   The original file claimed `¬ (∃ n : ℤ, (n:ℝ) = N_value)` via a

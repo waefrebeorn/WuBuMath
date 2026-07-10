@@ -21,11 +21,11 @@ open Real
 
 -- SO(n) as the group of orthogonal matrices with determinant 1
 def SO (n : ℕ) : Set (Matrix (Fin n) (Fin n) ℝ) := 
-  {R : Matrix (Fin n) (Fin n) ℝ | R * Rᵀ = 1 ∧ R.det = 1}
+  {R : Matrix (Fin n) (Fin n) ℝ | R * R.transpose = 1 ∧ R.det = 1}
 
 -- Lie algebra so(n) = {A ∈ ℝ^{n×n} | A + Aᵀ = 0}
 def so (n : ℕ) : Set (Matrix (Fin n) (Fin n) ℝ) :=
-  {A : Matrix (Fin n) (Fin n) ℝ | A + Aᵀ = 0}
+  {A : Matrix (Fin n) (Fin n) ℝ | A + A.transpose = 0}
 
 -- The exponential map exp: so(n) → SO(n)
 -- (Requires matrix exponential, which is nontrivial in Lean)
@@ -59,13 +59,13 @@ noncomputable def Lz : Matrix (Fin 3) (Fin 3) ℝ :=
   !![0, -1, 0; 1, 0, 0; 0, 0, 0]
 
 -- Verify that Lx, Ly, Lz are in so(3)
-theorem Lx_in_so3 : Lx + Lxᵀ = 0 := by
+theorem Lx_in_so3 : Lx + Lx.transpose = 0 := by
   ext i j; fin_cases i <;> fin_cases j <;> norm_num [Lx]
 
-theorem Ly_in_so3 : Ly + Lyᵀ = 0 := by
+theorem Ly_in_so3 : Ly + Ly.transpose = 0 := by
   ext i j; fin_cases i <;> fin_cases j <;> norm_num [Ly]
 
-theorem Lz_in_so3 : Lz + Lzᵀ = 0 := by
+theorem Lz_in_so3 : Lz + Lz.transpose = 0 := by
   ext i j; fin_cases i <;> fin_cases j <;> norm_num [Lz]
 
 -- Commutation relations [Lx, Ly] = Lz, etc.
