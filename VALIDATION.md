@@ -160,6 +160,29 @@ This closes the gap where `FiberBundle.lean` previously had a fake
 `so3_closed_under_compose` (SO(3) is a group) and references the C
 validation.
 
+## eshkol re-review: manifold.esk cross-validation (2026-07-11)
+
+After the first review, tsotchke pushed **19 new commits** to eshkol (release
+d861d20a, "v1.3.3-evolve"), adding `lib/core/manifold.esk` — a complete
+constant-curvature differential-geometry library (Poincaré / sphere /
+Euclidean): exp/log maps, geodesic distance, **analytic Christoffel /
+sectional / Ricci / scalar / Riemann curvature**. Ported + cross-validated in
+`src/math/wubu_poincare_geom.c` + `src/tests/test_wubu_poincare_geom.c`:
+
+- **WuBuMath's own exp_0 + distance are self-consistent** (dist(0,exp_0(v))=2|v|).
+- **DEVIL'S-ADVOCATE CATCH:** eshkol's released `manifold-exp-map` puts the
+  conformal factor `lam = 2/(1-|p|²)` *inside* the tanh
+  (`factor = tanh(0.5·lam·|v|)/|v|`). Cross-validation proves it does NOT
+  satisfy the geodesic invariant `dist(p, exp_p(v)) = const·|v|` for p≠0
+  (ratio drifts >0.15 across random bases). WuBuMath's existing exp_0 is the
+  consistent one. Kept eshkol's code VERBATIM so the discrepancy is
+  reproducible; documented in-file, not hidden.
+- **Real win:** eshkol's analytic Christoffel symbols AGREE with WuBuMath's
+  independent RK4 geodesic acceleration `x''(0) = -Γ(p)[v,v]` — two
+  independent methods, same manifold, match to 5e-2.
+- Analytic curvature confirmed: K=-1 (Poincaré), +1 (sphere), 0 (euclid);
+  scalar R = K·n(n-1); Ricci_ij = K(n-1)·g_ij verified.
+
 ## moonlab anyon SU(2)_k port (2026-07-10)
 
 `src/math/wubu_anyon.c` + `include/wubu_anyon.h` port the **SU(2)_k anyon
