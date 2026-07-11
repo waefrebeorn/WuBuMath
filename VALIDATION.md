@@ -160,6 +160,21 @@ This closes the gap where `FiberBundle.lean` previously had a fake
 `so3_closed_under_compose` (SO(3) is a group) and references the C
 validation.
 
+## moonlab anyon SU(2)_k port (2026-07-10)
+
+`src/math/wubu_anyon.c` + `include/wubu_anyon.h` port the **SU(2)_k anyon
+model** from `tsotchke/moonlab/src/algorithms/topological/topological.c` (MIT):
+q-number / q-factorial, triangle coefficients, the **quantum 6j-symbol** (Racah
+sum), SU(2)_k fusion-rule truncation, and braiding (R) phases `R^{ab}_c =
+exp(iπ(c(c+2)−a(a+2)−b(b+2))/(4(k+2)))`. Validated in
+`src/tests/test_wubu_anyon.c`: Ising (k=2: σ×σ→1+ψ) and Fibonacci (k=3:
+τ×τ→0+2) fusion rules, R-matrix unitarity `R·R†=1` + exchange symmetry
+`R^{ab}_c=R^{ba}_c`, and quantum 6j reality/boundedness (`{1 1 0;1 1 0}_q =
+1/√2`).
+
+This completes all three Tier-1 tsotchke ports (libirrep SO(3) + rep-theory,
+qgt manifold geodesic, moonlab anyons).
+
 ## qgt manifold geodesic port (2026-07-10)
 
 `src/math/wubu_manifold.c` + `include/wubu_manifold.h` port the **RK4 geodesic
