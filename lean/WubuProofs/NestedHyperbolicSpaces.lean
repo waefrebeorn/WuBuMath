@@ -67,7 +67,7 @@ theorem phi_curvature_progression (k : ℕ) : 0 < φ ^ (k : ℤ) - 2 := by
     have h : 1 < (1 + Real.sqrt 5) / 2 := by
       nlinarith [show Real.sqrt 5 > 2 from by
         have h : (2 : ℝ) ^ 2 = 4 := by norm_num
-        have h' : (Real.sqrt 5) ^ 2 = 5 := Real.sq_sqrt (by positivity : 0 ≤ 5)
+        have h' : (Real.sqrt 5) ^ 2 = 5 := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ 5)
         nlinarith]
     exact h
   -- For k ≥ 0, φ^k ≥ 1, so φ^k - 2 might be negative (for k=0: 1-2=-1)
@@ -81,14 +81,16 @@ theorem phi_curvature_progression (k : ℕ) : 0 < φ ^ (k : ℤ) - 2 := by
 -- correspond to φ^P for integer P
 theorem phi_power_series (i : ℤ) : φ ^ (i - 3) = φ ^ i / (φ ^ 3) := by
   have hφ_pos : 0 < φ := by unfold φ; positivity
-  rw [← Real.rpow_sub hφ_pos (↑i : ℝ) (3 : ℝ)]
-  congr 1
-  exact Int.cast_sub i 3
+  rw [show φ ^ (i - 3) = Real.rpow φ (↑(i - 3)) from rfl,
+      show φ ^ i = Real.rpow φ (↑i) from rfl,
+      show φ ^ 3 = Real.rpow φ (↑3) from rfl]
+  rw [Int.cast_sub i 3]
+  exact Real.rpow_sub hφ_pos (↑i) (↑3)
 
 -- The φ-progression of curvatures
-noncomputable def phi_curvature (level : ℕ) : ℝ := φ ^ ((level : ℤ) - 2)
+noncomputable def phi_curvature (level : ℕ) : ℝ := φ ^ ((level : ℝ) - 2)
 
 theorem phi_curvature_positive (level : ℕ) : 0 < phi_curvature level := by
   dsimp [phi_curvature]
   have hφ_pos : 0 < φ := by unfold φ; positivity
-  exact Real.rpow_pos_of_pos hφ_pos ((level : ℤ) - 2)
+  exact Real.rpow_pos_of_pos hφ_pos ((level : ℝ) - 2)
