@@ -160,6 +160,18 @@ This closes the gap where `FiberBundle.lean` previously had a fake
 `so3_closed_under_compose` (SO(3) is a group) and references the C
 validation.
 
+## qgt manifold geodesic port (2026-07-10)
+
+`src/math/wubu_manifold.c` + `include/wubu_manifold.h` port the **RK4 geodesic
+integrator** from `tsotchke/quantum_geometric_tensor/src/.../differential_geometry.c`
+(MIT), de-frameworked: a generic `Manifold` described by a Christoffel
+callback, integrating `dxⁱ/dt = vⁱ`, `dvⁱ/dt = −Γⁱ_jk vʲ vᵏ`. A concrete
+`sphere_christoffel` (S²) validates it in `src/tests/test_wubu_manifold.c`:
+great-circle arc length `d = v·T` recovered to 1e-4, with round-trip symmetry.
+This generalizes WuBuMath's exp/log beyond SO(3)/Poincaré toward arbitrary
+nested manifolds (the WuBu picture). qgt's distributed engine/allocation was
+deliberately dropped — only the reusable numerical core was kept.
+
 ## libirrep rep-theory port (2026-07-10)
 
 `src/math/wubu_rep_theory.c` + `include/wubu_rep_theory.h` port the Wigner 3j
