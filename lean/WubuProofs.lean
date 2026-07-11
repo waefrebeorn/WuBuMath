@@ -20,6 +20,7 @@ import WubuProofs.NestedHyperbolicSpaces
 import WubuProofs.HolographicOptimizer
 import WubuProofs.FiberBundle
 import WubuProofs.PowerTower
+import LeanCopies
 /- PowerTower.lean (2026-07-10 revision): now a HONEST file of verified
    numerical bounds on the power tower π↑↑4 (log π > 1, π^π > 27,
    log L2 > e, log⁴N ∈ (0,1)), all proven with 0 `sorry`. The earlier

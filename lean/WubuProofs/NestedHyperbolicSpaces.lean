@@ -21,6 +21,10 @@ import Mathlib.Tactic
 open Real
 open Set
 
+-- Golden ratio, explicitly defined (was previously an undefined constant,
+-- which made `0 < φ` and exponent laws unprovable).
+noncomputable def φ : ℝ := (1 + Real.sqrt 5) / 2
+
 -- A hyperbolic level with dimension, curvature, and scale
 structure HyperbolicLevel where
   dim : ℕ
@@ -76,14 +80,15 @@ theorem phi_curvature_progression (k : ℕ) : 0 < φ ^ (k : ℤ) - 2 := by
 -- Verify that the curvatures from our visualization (0.382, 0.618, 1.000, 1.618, 2.618, 4.236)
 -- correspond to φ^P for integer P
 theorem phi_power_series (i : ℤ) : φ ^ (i - 3) = φ ^ i / (φ ^ 3) := by
-  ring
+  have hφ_pos : 0 < φ := by unfold φ; positivity
+  rw [← Real.rpow_sub hφ_pos (↑i : ℝ) (3 : ℝ)]
+  congr 1
+  exact Int.cast_sub i 3
 
 -- The φ-progression of curvatures
 noncomputable def phi_curvature (level : ℕ) : ℝ := φ ^ ((level : ℤ) - 2)
 
 theorem phi_curvature_positive (level : ℕ) : 0 < phi_curvature level := by
   dsimp [phi_curvature]
-  have hφ_pos : 0 < φ := by
-    have : 0 < Real.sqrt 5 := by positivity
-    nlinarith
-  positivity
+  have hφ_pos : 0 < φ := by unfold φ; positivity
+  exact Real.rpow_pos_of_pos hφ_pos ((level : ℤ) - 2)

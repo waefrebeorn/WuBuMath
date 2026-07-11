@@ -147,10 +147,11 @@ theorem mobius_add_closure {n : ℕ} (c : ℝ) (hc : c > 0) (x y : EuclideanSpac
     have h_pos_first : 0 < 1 - c*‖x‖^2 := by nlinarith
     have h_pos_second : 0 < 1 - c*‖y‖^2 := by nlinarith
     positivity
-  -- A complete formal proof would verify the norm identity using algebraic expansion.
-  -- Given the complexity, we note that this is a well-known result in hyperbolic geometry
-  -- and we provide the outline above. The statement is true by the cited theorem.
-  sorry
+  -- The norm identity (line above) gives ‖mobiusAdd‖² = num/(den²). Closing
+  -- ‖mobiusAdd‖ < 1 is exactly the conclusion of mobius_add_closure_alt, which
+  -- proves it by the simpler (‖x‖+‖y‖)/(1+c‖x‖‖y‖) < 1 inequality. Defer to it
+  -- to avoid duplicating the algebraic closure (DRY; single source of truth).
+  exact mobius_add_closure_alt c hc x y hx hy
 
 /--
   Alternate approach for Theorem 2: A direct proof using the inequality
@@ -164,9 +165,36 @@ theorem mobius_add_closure_alt {n : ℕ} (c : ℝ) (hc : c > 0) (x y : Euclidean
     nlinarith
   have h_den_pos : 0 < 1 + c*‖x‖*‖y‖ := by nlinarith
   have h_sq_bound : ‖mobiusAdd c x y‖^2 ≤ ((‖x‖ + ‖y‖) / (1 + c*‖x‖*‖y‖))^2 := by
-    -- This bound follows from the Cauchy-Schwarz inequality and the definition of mobiusAdd.
-    -- The full computation is standard.
-    sorry
+    -- ‖mobiusAdd‖ = ‖num‖ / den, den = 1 + 2c⟨x,y⟩ + c²‖x‖²‖y‖² > 0 (h_den_pos).
+    -- ‖num‖ = ‖(1+2c⟨x,y⟩+c‖y‖²)x + (1-c‖x‖²)y‖
+    --   ≤ (1+2c⟨x,y⟩+c‖y‖²)‖x‖ + (1-c‖x‖²)‖y‖   (triangle ineq)
+    have h_tri : ‖(1+2*c*⟪x, y⟫ + c*‖y‖^2) • x + (1 - c*‖x‖^2) • y‖ ≤
+        (1+2*c*⟪x, y⟫ + c*‖y‖^2)*‖x‖ + (1 - c*‖x‖^2)*‖y‖ := by
+      apply norm_add_le
+    -- It suffices to show the RHS ≤ (‖x‖+‖y‖)·den/(1+c‖x‖‖y‖), i.e. after
+    -- clearing denominators (all positive):
+    --   (1+2c⟨x,y⟩+c‖y‖²)(1+c‖x‖‖y‖)‖x‖ + (1-c‖x‖²)(1+c‖x‖‖y‖)‖y‖
+    --     ≤ (‖x‖+‖y‖)(1+2c⟨x,y⟩+c²‖x‖²‖y‖²)
+    have h_cs : ⟪x, y⟫ ≤ ‖x‖*‖y‖ := real_inner_le_norm x y
+    have h_den_pos' : 0 < den := h_den_pos
+    have h_clear : (1+2*c*⟪x, y⟫ + c*‖y‖^2)*(1+c*‖x‖*‖y‖)*‖x‖ + (1 - c*‖x‖^2)*(1+c*‖x‖*‖y‖)*‖y‖
+        ≤ (‖x‖+‖y‖)*(1+2*c*⟪x, y⟫ + c^2*‖x‖^2*‖y‖^2) := by
+      -- Expand both sides and reduce using ‖x‖<1, ‖y‖<1, ⟨x,y⟩≤‖x‖‖y‖.
+      have hxy : ⟪x, y⟫ ≤ ‖x‖*‖y‖ := h_cs
+      nlinarith [hx, hy, hxy]
+    -- From h_tri and h_clear, ‖num‖ ≤ (‖x‖+‖y‖)·den/(1+c‖x‖‖y‖), so
+    -- ‖mobiusAdd‖ = ‖num‖/den ≤ (‖x‖+‖y‖)/(1+c‖x‖‖y‖). Square both sides.
+    have h_num_le : ‖(1+2*c*⟪x, y⟫ + c*‖y‖^2) • x + (1 - c*‖x‖^2) • y‖
+        ≤ (‖x‖+‖y‖) * den / (1 + c*‖x‖*‖y‖) := by
+      apply le_of_le_of_eq h_tri
+      rw [← div_le_div_right (by positivity : 0 < (1+c*‖x‖*‖y‖))]
+      exact h_clear
+    have h_mob_le : ‖mobiusAdd c x y‖ ≤ (‖x‖+‖y‖) / (1 + c*‖x‖*‖y‖) := by
+      dsimp [mobiusAdd]
+      rw [norm_smul, abs_of_nonneg (by positivity : 0 ≤ 1/den)]
+      apply le_trans h_num_le
+      exact div_le_div_right (by positivity)
+    exact sq_le_sq_of_le (by positivity) h_mob_le
   have h_sum_lt_one : (‖x‖ + ‖y‖) / (1 + c*‖x‖*‖y‖) < 1 := by
     have : ‖x‖ + ‖y‖ < 1 + c*‖x‖*‖y‖ := by
       nlinarith
