@@ -8,6 +8,7 @@
 #include "wubu_parallel_transport.h"
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* ===================================================================
  * Lambda factor: lambda_x = 2 / (1 - c * ||x||^2)
