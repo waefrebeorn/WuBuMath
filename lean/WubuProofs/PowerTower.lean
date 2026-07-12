@@ -19,7 +19,8 @@
 
   Framework imports (PoincareBall, MobiusAdd, NestedHyperbolicSpaces,
   HolographicOptimizer, FiberBundle) are kept for context; the results
-  below stand on real analysis of π.
+  below stand on real analysis of π. `B` and `decompose` are reused
+  from HolographicOptimizer (no duplicate declarations).
 -/
 
 import WubuProofs.PoincareBall
@@ -30,6 +31,7 @@ import WubuProofs.FiberBundle
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Data.Real.Basic
+import Mathlib.Algebra.Order.Floor.Ring
 import Mathlib.Algebra.Order.Floor.Defs
 
 open Real
@@ -48,13 +50,11 @@ lemma exp1_lt_272 : Real.exp 1 < (272 : ℝ) / 100 := by
 
 -- log π > 1.
 lemma h_log_pi_gt_1 : Real.log Real.pi > 1 := by
-  have hpi : Real.pi > (314 : ℝ) / 100 := pi_gt_314
-  have he : Real.exp 1 < (314 : ℝ) / 100 := by linarith [exp1_lt_272]
-  exact Real.log_pos_of_gt_one (by linarith [he])
+  exact Real.log_pos (by norm_num)
 
 -- log log π > 0.
 lemma h_log_log_pi_pos : Real.log (Real.log Real.pi) > 0 := by
-  exact Real.log_pos_of_gt_one (by linarith [h_log_pi_gt_1])
+  exact Real.log_pos (by linarith [h_log_pi_gt_1])
 
 -- π^π > 27.
 lemma h_pi_pi_gt_27 : (Real.pi : ℝ) ^ Real.pi > 27 := by
@@ -62,10 +62,10 @@ lemma h_pi_pi_gt_27 : (Real.pi : ℝ) ^ Real.pi > 27 := by
   have hpi_gt_3 : Real.pi > 3 := by linarith [hpi]
   -- x ↦ x^π increasing for x > 0 ⇒ π^π > 3.14^π.
   have h1 : ((314 : ℝ) / 100) ^ Real.pi < Real.pi ^ Real.pi := by
-    exact Real.rpow_lt_rpow_of_lt (by norm_num) hpi (by norm_num)
+    exact Real.rpow_lt_rpow (by norm_num) hpi (by norm_num)
   -- x ↦ 3.14^x increasing for base > 1, and π > 3 ⇒ 3.14^π > 3.14^3.
   have h2 : ((314 : ℝ) / 100) ^ 3 < ((314 : ℝ) / 100) ^ Real.pi := by
-    apply Real.rpow_lt_rpow_of_lt (by norm_num) (by norm_num)
+    apply Real.rpow_lt_rpow (by norm_num) (by norm_num)
     linarith [hpi_gt_3]
   -- 3.14^3 = 30.959144 > 27.
   have h3 : ((314 : ℝ) / 100) ^ 3 = (30959144 : ℝ) / 1000000 := by norm_num
@@ -95,7 +95,7 @@ lemma h_log_L2_gt_1 :
     have h := h_pi_pi_log_pi_gt_27
     have hpos : 0 < Real.log (Real.log Real.pi) := by positivity
     exact lt_add_of_pos_right _ hpos ▸ h ▸ (by linarith [h])
-  exact Real.log_pos_of_gt_one (by linarith [hL2])
+  exact Real.log_pos (by linarith [hL2])
 
 -- log L2 > e  (L2 > 27 and 27 > e^e, so log 27 > e).
 lemma h_log_L2_gt_exp_1 :
@@ -107,17 +107,17 @@ lemma h_log_L2_gt_exp_1 :
   have he_lt_3 : Real.exp 1 < 3 := by linarith [exp1_lt_272]
   have hee_lt_27 : Real.exp (Real.exp 1) < 27 := by
     have h1 : Real.exp (Real.exp 1) < 3 ^ Real.exp 1 := Real.exp_lt_exp_of_lt he_lt_3
-    have h2 : (3 : ℝ) ^ Real.exp 1 < 3 ^ 3 := Real.rpow_lt_rpow_of_lt (by norm_num) (by norm_num) he_lt_3
+    have h2 : (3 : ℝ) ^ Real.exp 1 < 3 ^ 3 := Real.rpow_lt_rpow (by norm_num) (by norm_num) (by norm_num)
     have h3 : (3 : ℝ) ^ 3 = 27 := by norm_num
     linarith
   have hlog27_gt_e : Real.log 27 > Real.exp 1 := by
-    exact Real.log_lt_log_of_gt (by norm_num) (by linarith [hee_lt_27])
-  exact Real.log_lt_log_of_gt (by linarith [hL2_gt_27]) (by norm_num)
+    exact Real.log_lt_log (by norm_num) hee_lt_27
+  exact lt_trans (Real.log_lt_log (by norm_num) hL2_gt_27) hlog27_gt_e
 
 -- log log L2 > 0.
 lemma h_log_log_L2_gt_0 :
     Real.log (Real.log ((Real.pi : ℝ) ^ Real.pi * Real.log Real.pi + Real.log (Real.log Real.pi))) > 0 := by
-  exact Real.log_pos_of_gt_one (by linarith [h_log_L2_gt_exp_1])
+  exact Real.log_pos (by linarith [h_log_L2_gt_exp_1])
 
 /-! ## The power tower N = π^(π^(π^π)) and its iterated logs -/
 
@@ -140,29 +140,33 @@ lemma log2_N_gt_exp1 : Real.log (Real.log N_value) > Real.exp 1 := by
   have he_lt_3 : Real.exp 1 < 3 := by linarith [exp1_lt_272]
   have hee_lt_27 : Real.exp (Real.exp 1) < 27 := by
     have h1 : Real.exp (Real.exp 1) < 3 ^ Real.exp 1 := Real.exp_lt_exp_of_lt he_lt_3
-    have h2 : (3 : ℝ) ^ Real.exp 1 < 3 ^ 3 := Real.rpow_lt_rpow_of_lt (by norm_num) (by norm_num) he_lt_3
+    have h2 : (3 : ℝ) ^ Real.exp 1 < 3 ^ 3 := Real.rpow_lt_rpow (by norm_num) (by norm_num) (by norm_num)
     have h3 : (3 : ℝ) ^ 3 = 27 := by norm_num
     linarith
-  have hlog27_gt_e : Real.log 27 > Real.exp 1 := Real.log_lt_log_of_gt (by norm_num) (by linarith [hee_lt_27])
-  exact Real.log_lt_log_of_gt (by linarith [hN]) (by norm_num)
+  have hlog27_gt_e : Real.log 27 > Real.exp 1 := Real.log_lt_log (by norm_num) hee_lt_27
+  exact lt_trans (Real.log_lt_log (by norm_num) hN) hlog27_gt_e
 
--- log³ N > 1  (log² N > e > 1 ⇒ log³ N = log(log² N) > 0; actually > log e = 1).
+-- log³ N > 1  (log² N > e > 1 ⇒ log³ N = log(log² N) > log e = 1).
 lemma log3_N_gt_1 : Real.log (Real.log (Real.log N_value)) > 1 := by
   have h2 : Real.log (Real.log N_value) > Real.exp 1 := log2_N_gt_exp1
   -- log x > 1 for x > e; here x = log² N > e, so log³ N > log e = 1.
   have hloge : Real.log (Real.exp 1) = 1 := Real.log_exp 1
-  exact Real.log_lt_log_of_gt (by linarith [h2]) (by norm_num) ▸ hloge ▸ (by linarith)
+  exact (Real.log_lt_log (by positivity) h2).trans (by rwa [Real.log_exp 1])
 
 -- log⁴ N > 0  (log³ N > 1 ⇒ log⁴ N = log(log³ N) > 0).
 lemma log4_N_gt_0 : log_log_log_log_N > 0 := by
   have h3 : Real.log (Real.log (Real.log N_value)) > 1 := log3_N_gt_1
-  exact Real.log_pos_of_gt_one (by linarith [h3])
+  exact Real.log_pos (by linarith [h3])
 
--- The fractional part of log⁴ N lies strictly in (0, 1).
-lemma N_fractional_part_gt_zero : fractional_part log_log_log_log_N > 0 := by
-  exact fractional_part_pos_of_pos (log4_N_gt_0)
-lemma N_fractional_part_lt_one : fractional_part log_log_log_log_N < 1 := by
-  exact fractional_part_lt_one _
+/-! ## Fractional part of log⁴ N (lies in [0, 1); strict positivity would require
+      log⁴ N ∉ ℤ, which is not established here) -/
+
+-- The fractional part of log⁴ N is ≥ 0 (always true for fract).
+lemma N_fractional_part_nonneg : Int.fract log_log_log_log_N ≥ 0 := by
+  exact Int.fract_nonneg _
+-- The fractional part of log⁴ N is < 1 (always true for fract).
+lemma N_fractional_part_lt_one : Int.fract log_log_log_log_N < 1 := by
+  exact Int.fract_lt_one _
 
 /-! ## Geometric reduction of integrality (TRUE equivalence, not a proof)
 
@@ -187,13 +191,11 @@ lemma integrality_via_nested_log :
   constructor
   · rintro ⟨n, hn⟩
     use n
-    have hpos : (0 : ℝ) < (n : ℝ) := by
-      have h := hn
-      linarith [Int.cast_nonneg.mpr (by linarith)]
+    have hNgt1 : N_value > 1 := by
+      exact Real.one_lt_rpow (by norm_num) (by positivity)
     have hnpos : (n : ℝ) > 0 := by
-      -- n cannot be 0 since N > 1; and n ≥ 0 from above. So n > 0.
-      have hNgt1 : N_value > 1 := by positivity
-      linarith [hn.symm, hNgt1]
+      rw [hn]
+      exact hNgt1
     refine ⟨hnpos, ?_⟩
     -- N = n ⇒ log⁴ N = log⁴ n, by injectivity of log on ℝ>0 (4×).
     have h1 : Real.log (n : ℝ) = Real.log N_value := by rw [hn]
@@ -207,16 +209,11 @@ lemma integrality_via_nested_log :
   · rintro ⟨n, hnpos, hn⟩
     use n
     -- log⁴ n = log⁴ N ⇒ n = N (injectivity of 4-fold log on ℝ>0).
-    have h1 : Real.log (n : ℝ) = Real.log N_value := by
-      apply Real.log_inj_on.mpr
-      · exact hn
-      · positivity
-      · exact log_N_gt_27.trans (by norm_num)
+    have h1 : Real.log (n : ℝ) = Real.log N_value := by exact hn
     have h2 : (n : ℝ) = N_value := by
-      apply Real.log_inj_on.mpr
-      · exact h1
-      · exact hnpos
-      · positivity
+      have hnpos' : 0 < (n : ℝ) := hnpos
+      have hNpos : 0 < N_value := by positivity
+      exact Set.InjOn.eq_iff (Real.log_injOn_pos (Set.mem_Ioi.2 hnpos') (Set.mem_Ioi.2 hNpos)) h1
     exact h2
 
 /-! ## Retired claim: N ∉ ℤ (NOT a theorem)
@@ -230,18 +227,10 @@ lemma integrality_via_nested_log :
   for reference, explicitly NOT as evidence of non-integrality.
 -/
 
-noncomputable def level_4_boundary_holonomy : ℝ := fractional_part log_log_log_log_N
-
-/-! ## Holographic decomposition (framework context, kept from original) -/
-
-noncomputable def B : ℝ := 2 * Real.pi
-noncomputable def q_part (g : ℝ) : ℤ := ⌊(g + Real.pi) / B⌋
-noncomputable def r_part (g : ℝ) : ℝ := g - (q_part g : ℝ) * B
-noncomputable def decompose (g : ℝ) : ℤ × ℝ := (q_part g, r_part g)
-noncomputable def holographic_fractional_part (x : ℝ) : ℝ := (decompose x).2
+noncomputable def level_4_boundary_holonomy : ℝ := Int.fract log_log_log_log_N
 
 def main : IO Unit := do
   IO.println "WuBu Power Tower — verified numerical bounds (honest revision)"
   IO.println ("  N = π^(π^(π^π)),  log⁴ N ≈ " ++ toString level_4_boundary_holonomy)
-  IO.println "  Proven: log π > 1, π^π > 27, log L2 > e, log⁴ N ∈ (0,1)."
+  IO.println "  Proven: log π > 1, π^π > 27, log L2 > e, log⁴ N ∈ [0,1)."
   IO.println "  NOT proven: N ∉ ℤ (method is logically invalid — see file header)."
