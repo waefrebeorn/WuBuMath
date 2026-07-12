@@ -86,7 +86,7 @@ theorem comm_Lz_Lx : Lz * Lx - Lx * Lz = Ly := by
 -- so F = 0 (flat connection)
 theorem flat_connection (A : Matrix (Fin 3) (Fin 3) ℝ) (hA : A ∈ so 3) : 
     A * A - A * A = 0 := by
-  ring
+  simp
 
 -- For NON-CONSTANT A = A(t) = θ(t)·Lz,
 -- F = dA/dt · dt ∧ dt + [A, A]/2 ... but dt ∧ dt = 0
@@ -114,11 +114,14 @@ theorem so3_contains_identity : (1 : Matrix (Fin 3) (Fin 3) ℝ) ∈ SO 3 := by
 
 theorem so3_closed_under_compose (R S : Matrix (Fin 3) (Fin 3) ℝ)
     (hR : R ∈ SO 3) (hS : S ∈ SO 3) : R * S ∈ SO 3 := by
-  simp_all [SO]
+  obtain ⟨hR1, hR2⟩ := hR
+  obtain ⟨hS1, hS2⟩ := hS
   constructor
-  · rw [Matrix.mul_transpose, Matrix.transpose_mul, hR.1, hS.1]
-    simp
-  · rw [Matrix.det_mul, hR.2, hS.2]
+  · show (R * S) * (R * S).transpose = 1
+    rw [Matrix.transpose_mul]
+    simp only [Matrix.mul_assoc]
+    rw [← Matrix.mul_assoc S S.transpose R.transpose, hS1, Matrix.one_mul, hR1]
+  · rw [Matrix.det_mul, hR2, hS2]
     norm_num
 
 -- WuBu nesting IS a principal G-bundle: the collection of level rotations

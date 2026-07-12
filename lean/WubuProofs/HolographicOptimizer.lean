@@ -63,11 +63,8 @@ theorem remainder_in_range (g : ℝ) :
 
 theorem decomposition_exact (g : ℝ) : g = ((decompose g).1 : ℝ) * B + (decompose g).2 := by
   dsimp [decompose, B]
-  <;> ring_nf
-  <;> simp_all [Int.cast_sub, Int.cast_mul]
-  <;> field_simp [Real.pi_ne_zero] at *
-  <;> ring_nf at *
-  <;> linarith [Real.pi_pos]
+  push_cast
+  ring
 
 -- Cumulative decomposition: storing soul and echo across multiple steps
 noncomputable def soul (gradients : List ℝ) : ℤ :=
@@ -76,16 +73,23 @@ noncomputable def soul (gradients : List ℝ) : ℤ :=
 noncomputable def echo (gradients : List ℝ) : ℝ :=
   (gradients.map (λ g => (decompose g).2)).sum
 
+-- Cons-laws used by total_gradient (safe: do not re-substitute g into decompose)
+theorem soul_cons (g : ℝ) (gs : List ℝ) : soul (g::gs) = (decompose g).1 + soul gs := by
+  simp [soul, List.sum_cons]
+
+theorem echo_cons (g : ℝ) (gs : List ℝ) : echo (g::gs) = (decompose g).2 + echo gs := by
+  simp [echo, List.sum_cons]
+
 -- Total gradient = sum of all individual gradients
 theorem total_gradient (gradients : List ℝ) :
     (gradients.sum : ℝ) = ((soul gradients : ℤ) : ℝ) * B + echo gradients := by
   induction' gradients with g gs ih
-  · simp [soul, echo, B]
-  · simp [soul, echo, List.sum_cons, decomposition_exact g]
-    -- (decompose g).1 + soul(gs) decomp continues...
+  · simp [soul, echo]
+  · rw [soul_cons g gs, echo_cons g gs]
+    conv => lhs; rw [List.sum_cons, decomposition_exact g]
     rw [ih]
     push_cast
-    ring
+    ring_nf
 
 -- The "Lazarus test": after a crash, stored (soul, echo) recovers total gradient
 theorem lazarus_recovery (gradients : List ℝ) (s : ℤ) (e : ℝ)
@@ -97,7 +101,9 @@ theorem lazarus_recovery (gradients : List ℝ) (s : ℤ) (e : ℝ)
 -- The decomposition is additive: decompose(g₁ + g₂) ≠ decompose(g₁) + decompose(g₂)
 -- But the CUMULATIVE soul and echo ARE additive
 theorem soul_additive (g₁ g₂ : ℝ) :
-    soul [g₁, g₂] = (decompose g₁).1 + (decompose g₂).1 := rfl
+    soul [g₁, g₂] = (decompose g₁).1 + (decompose g₂).1 := by
+  simp [soul, echo, decompose, List.sum_cons, List.sum_nil, zero_add]
 
 theorem echo_additive (g₁ g₂ : ℝ) :
-    echo [g₁, g₂] = (decompose g₁).2 + (decompose g₂).2 := rfl
+    echo [g₁, g₂] = (decompose g₁).2 + (decompose g₂).2 := by
+  simp [soul, echo, decompose, List.sum_cons, List.sum_nil, zero_add]
