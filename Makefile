@@ -30,6 +30,7 @@ SRCS = $(SRC)/math/wubu_color.c \
        $(SRC)/math/wubu_anyon.c \
        $(SRC)/math/wubu_poincare_geom.c \
        $(SRC)/math/wubu_manifold_ad.c \
+       $(SRC)/math/wubu_lorentz.c \
        $(SRC)/train/wubu_tangent_flow.c \
        $(SRC)/train/wubu_flow_matching.c \
        $(SRC)/train/wubu_riemannian_sgd.c \
@@ -255,7 +256,13 @@ $(BIN)/test_manifold_ad: $(SRC)/tests/test_wubu_manifold_ad.c $(SRC)/math/wubu_m
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $(SRC)/math/wubu_manifold_ad.c $(SRC)/math/wubu_poincare_geom.c $< -o $@ $(LDFLAGS)
 
-test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_so3 $(BIN)/test_rep $(BIN)/test_manifold $(BIN)/test_anyon $(BIN)/test_pgeom $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_manifold_ad $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
+# Lorentz (hyperboloid) model + nested-hyperboloid projection (B-nested):
+# grounded in Fan et al. CVPR 2022 Eq. 9/10/13.
+$(BIN)/test_lorentz: $(SRC)/tests/test_wubu_lorentz.c $(SRC)/math/wubu_lorentz.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) $(SRC)/math/wubu_lorentz.c $< -o $@ $(LDFLAGS)
+
+test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_so3 $(BIN)/test_rep $(BIN)/test_manifold $(BIN)/test_anyon $(BIN)/test_pgeom $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_manifold_ad $(BIN)/test_lorentz $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
 	@echo "=== VHF Engine Tests ===" && $(BIN)/test_vhf_engine
 	@echo "=== WuBuMath Tests ===" && $(BIN)/wubu_tests
 	@echo "=== Slermed JAX Tests ===" && $(BIN)/jax_test
