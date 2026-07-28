@@ -179,6 +179,8 @@ MIT License — WuBu Slermes Project
 
 ---
 
+---
+
 ## License
 
 This project is licensed under the **Waefrebeorn Umbrella License v3.0**.
