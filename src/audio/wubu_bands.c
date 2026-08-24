@@ -16,7 +16,7 @@ int wubu_band_split(const WubuStft* st, WubuBandTable* bt){
     int bins=st->frame_size/2+1;
     float bin_hz=48000.0f/(float)st->frame_size;  /* assume 48k; doc'd */
     int edges[6]={0};
-    const float hi[5]={250.0f,2000.0f,6000.0f,12000.0f,1e9f};
+    const float hi[5]={300.0f,4000.0f,10000.0f,16000.0f,1e9f};
     for(int b=0;b<5;b++){
         edges[b+1]=bins;
         for(int k=0;k<bins;k++)

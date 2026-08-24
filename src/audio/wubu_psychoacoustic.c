@@ -82,7 +82,7 @@ void wubu_pa_smr_per_band(const WubuPsychoacoustic* pa,
     int bins=pa->fft_size/2+1;
     /* use the same 5-band edges as wubu_bands */
     int edges[6]={0};
-    float hi[5]={250.0f,2000.0f,6000.0f,12000.0f,1e9f};
+    float hi[5]={300.0f,4000.0f,10000.0f,16000.0f,1e9f};
     float bin_hz=(float)pa->sample_rate/(float)pa->fft_size;
     for(int b=0;b<5;b++){
         edges[b+1]=bins;
