@@ -242,3 +242,20 @@ int wubu_beam_column_to_band(const WubuBeam* beam,int strip_col){
     }
     return WUBU_BAND_VISIBLE;
 }
+
+
+/* GAP-A013: sweep sample -> field coordinates */
+void wubu_beam_field_coord(const WubuBeam* beam,int sweep_sample,
+                           int frames_per_sweep,WubuBeamFieldCoord* out){
+    if(!out||frames_per_sweep<=0) return;
+    int len=beam->cfg.sweep_length;
+    int s=sweep_sample;
+    if(s<0)s=0; if(s>=len)s=len-1;
+    /* the beam is time-multiplexed: each equal slice of the sweep is one
+     * frame window; within a window, u/v are the fractional positions. */
+    float fs=(float)s/(float)len*(float)frames_per_sweep;
+    out->frame_index=(int)fs; if(out->frame_index>=frames_per_sweep)
+        out->frame_index=frames_per_sweep-1;
+    out->u=fs-(float)out->frame_index;          /* progress in window */
+    out->v=(float)(s%beam->cfg.strip_width)/(float)beam->cfg.strip_width;
+}

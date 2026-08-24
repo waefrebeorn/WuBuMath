@@ -199,8 +199,28 @@ static void test_text_into_infrared(void){
     for(int i=0;i<10*16*3;i++) CHECK(fabsf(out[i])<6.9f || out[i]!=7.0f);
     wubu_beam_free(&b);wubu_text_free(&te);
 }
+static void test_field_coord_mapping(void){
+    /* GAP-A013 gates: monotone frame index over the sweep; u in [0,1);
+     * v covers strip uniformly; endpoints map to first/last frames. */
+    WubuBeamConfig cfg={ .strip_width=100,.sweep_length=800,
+        .orientation=WUBU_BEAM_HORIZONTAL,
+        .bands={{60,true},{30,false},{10,false}} };
+    WubuBeam b; CHECK(wubu_beam_init(&b,&cfg)==0);
+    int prev_frame=-1;
+    for(int s=0;s<800;s+=7){
+        WubuBeamFieldCoord fc;
+        wubu_beam_field_coord(&b,s,8,&fc);
+        CHECK(fc.frame_index>=prev_frame);
+        CHECK(fc.u>=0.0f&&fc.u<1.0f);
+        CHECK(fc.v>=0.0f&&fc.v<1.0f);
+        prev_frame=fc.frame_index;
+    }
+    CHECK(prev_frame==7);   /* last samples reach final window */
+    wubu_beam_free(&b);
+}
 int main(void){
     printf("=== WuBuMath Beam Canvas Tests ===\n\n");
+    test_field_coord_mapping(); printf("  test_field_coord_mapping...PASS\n");passed++;
     test_text_into_infrared(); printf("  test_text_into_infrared...PASS\n");passed++;
     test_rate_account_and_layout(); printf("  test_rate_account_and_layout...PASS\n");passed++;
     test_mask_and_invisible_reader(); printf("  test_mask_and_invisible_reader...PASS\n");passed++;

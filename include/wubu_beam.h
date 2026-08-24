@@ -77,6 +77,18 @@ float wubu_beam_rate_account(const WubuBeam* beam,int quant_levels,
 void wubu_beam_set_layout(WubuBeam* beam,WubuBandLayout layout);
 int  wubu_beam_column_to_band(const WubuBeam* beam,int strip_col);
 
+/* GAP-A013: beam-to-latent-field mapping — resolve a sweep position to
+ * the latent-field cell it addresses, given the field grid dims. This is
+ * the contract between the beam (1D stream) and the coordinate-addressable
+ * canvas (wubu_canvas): any sweep sample maps deterministically onto a
+ * field cell, so the encoder/decoder agree without side channel. */
+typedef struct {
+    int frame_index;   /* which keyframe window this sample belongs to */
+    float u,v;         /* normalized [0,1) coords inside the frame */
+} WubuBeamFieldCoord;
+void wubu_beam_field_coord(const WubuBeam* beam,int sweep_sample,
+                           int frames_per_sweep,WubuBeamFieldCoord* out);
+
 /* GAP-B004: renderer ignore-mask — 1 per strip column if that column is
  * visible-band, 0 if invisible (renderer must skip). */
 void wubu_beam_visibility_mask(const WubuBeam* beam,char* mask /*[total_width]*/);
