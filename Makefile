@@ -240,6 +240,10 @@ $(BIN)/test_pm: $(SRC)/tests/test_wubu_prodman.c $(SRC)/math/wubu_prodman.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_prodman.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_lpos: $(SRC)/tests/test_wubu_learned_pos.c $(SRC)/math/wubu_learned_pos.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_learned_pos.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hmha: $(SRC)/tests/test_wubu_hmha.c $(SRC)/math/wubu_hmha.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hmha.c $< -o $@ $(LDFLAGS)
@@ -494,6 +498,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Poincaré LayerNorm ===" && $(BIN)/test_hnorm
 	@echo "=== Hyperbolic Transformer Block ===" && $(BIN)/test_hblock
 	@echo "=== Hyperbolic Multi-Head Attention ===" && $(BIN)/test_hmha
+	@echo "=== Learned Positional Embedding ===" && $(BIN)/test_lpos
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
 	@echo "=== Hierarchical Classification ===" && $(BIN)/test_hier
