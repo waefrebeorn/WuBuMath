@@ -97,6 +97,17 @@ void wubu_flow_free(WubuFlowMatching* model);
 void wubu_flow_geodesic_interpolate(float* mu_t, const float* x_0, const float* x_1,
                                      float t, int N, int D, float c);
 
+/* GAP-C014: scale-aware variant — per-level scale `s` modulates the
+ * exponential/log maps (WuBu Nesting's scale_aware maps), letting each
+ * nesting level control how far tangent steps reach. */
+void wubu_flow_geodesic_interpolate_scaled(float* mu_t, const float* x_0,
+                                           const float* x_1, float t,
+                                           int N, int D, float c, float scale);
+/* Scale-aware target velocity companion. */
+void wubu_flow_target_velocity_scaled(float* v_target, const float* x_0,
+                                      const float* x_1, float t,
+                                      int N, int D, float c, float scale);
+
 /* Compute target velocity: d/dt μ_t at time t */
 void wubu_flow_target_velocity(float* v_target, const float* x_0, const float* x_1,
                                 float t, int N, int D, float c);
