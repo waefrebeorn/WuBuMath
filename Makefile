@@ -240,6 +240,10 @@ $(BIN)/test_pm: $(SRC)/tests/test_wubu_prodman.c $(SRC)/math/wubu_prodman.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_prodman.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_kvc: $(SRC)/tests/test_wubu_kvcache.c $(SRC)/math/wubu_kvcache.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_kvcache.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_causal: $(SRC)/tests/test_wubu_causal.c $(SRC)/math/wubu_causal.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_causal.c $< -o $@ $(LDFLAGS)
@@ -504,6 +508,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic Multi-Head Attention ===" && $(BIN)/test_hmha
 	@echo "=== Learned Positional Embedding ===" && $(BIN)/test_lpos
 	@echo "=== Causal Mask ===" && $(BIN)/test_causal
+	@echo "=== KV Cache ===" && $(BIN)/test_kvc
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
 	@echo "=== Hierarchical Classification ===" && $(BIN)/test_hier
