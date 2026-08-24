@@ -181,12 +181,26 @@ $(BIN)/vhf_multires_demo: examples/vhf_multires_demo.c $(SRCS) $(SRC)/model/wubu
 
 # Flow matching tests
 $(BIN)/test_flow_matching: $(SRC)/tests/test_wubu_flow_matching.c $(SRC)/train/wubu_flow_matching.c \
-                            $(SRC)/math/wubu_hyperbolic.c $(SRC)/math/wubu_quaternion.c
+                            $(SRC)/math/wubu_hyperbolic.c $(SRC)/math/wubu_quaternion.c \
+                            $(SRC)/math/wubu_parallel_transport.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $(SRC)/train/wubu_flow_matching.c $(SRC)/math/wubu_hyperbolic.c \
-	    $(SRC)/math/wubu_quaternion.c $< -o $@ $(LDFLAGS)
+	    $(SRC)/math/wubu_quaternion.c $(SRC)/math/wubu_parallel_transport.c $< -o $@ $(LDFLAGS)
 
-# Latent codec tests
+# Beam canvas + STFT tests (GAP-A001/A005/B003/E001)
+$(BIN)/test_beam: $(SRC)/tests/test_wubu_beam.c $(SRC)/model/wubu_beam.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $< -o $@ $(LDFLAGS)
+
+$(BIN)/test_stft: $(SRC)/tests/test_wubu_stft.c $(SRC)/audio/wubu_stft.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/audio/wubu_stft.c $< -o $@ $(LDFLAGS)
+
+# Manifold CLIP tests (GAP-D002/D003)
+$(BIN)/test_manifold_clip: $(SRC)/tests/test_wubu_manifold_clip.c $(SRC)/train/wubu_manifold_clip.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_latent_codec: $(SRC)/tests/test_wubu_latent_codec.c $(SRC)/train/wubu_latent_codec.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $(SRC)/train/wubu_latent_codec.c $< -o $@ $(LDFLAGS)
@@ -268,7 +282,7 @@ $(BIN)/test_lorentz_poincare: $(SRC)/tests/test_wubu_lorentz_poincare.c $(SRC)/m
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $(SRC)/math/wubu_lorentz.c $(SRC)/math/wubu_lorentz_poincare.c $(SRC)/math/wubu_poincare_geom.c $< -o $@ $(LDFLAGS)
 
-test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_so3 $(BIN)/test_rep $(BIN)/test_manifold $(BIN)/test_anyon $(BIN)/test_pgeom $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_manifold_ad $(BIN)/test_lorentz $(BIN)/test_lorentz_poincare $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
+test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_so3 $(BIN)/test_rep $(BIN)/test_manifold $(BIN)/test_anyon $(BIN)/test_pgeom $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_manifold_ad $(BIN)/test_lorentz $(BIN)/test_lorentz_poincare $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_manifold_clip $(BIN)/test_beam $(BIN)/test_stft $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
 	@echo "=== VHF Engine Tests ===" && $(BIN)/test_vhf_engine
 	@echo "=== WuBuMath Tests ===" && $(BIN)/wubu_tests
 	@echo "=== Slermed JAX Tests ===" && $(BIN)/jax_test
@@ -284,6 +298,9 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Parallel Transport Tests ===" && $(BIN)/test_parallel_transport
 	@echo "=== Tangent Flow Tests ===" && $(BIN)/test_tangent_flow
 	@echo "=== Flow Matching Tests ===" && $(BIN)/test_flow_matching
+	@echo "=== Manifold CLIP Tests ===" && $(BIN)/test_manifold_clip
+	@echo "=== Beam Canvas Tests ===" && $(BIN)/test_beam
+	@echo "=== STFT Tests ===" && $(BIN)/test_stft
 	@echo "=== Canvas Resolution Tests ===" && $(BIN)/test_canvas_res
 	@echo "=== Latent Codec Tests ===" && $(BIN)/test_latent_codec
 	@echo "=== WuBuNestGPT Tests ===" && $(BIN)/test_nest_gpt

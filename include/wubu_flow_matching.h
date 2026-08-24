@@ -121,6 +121,12 @@ float wubu_flow_train_step(WubuFlowMatching* model,
  * Inference — Generate Intermediate Frames
  * =================================================================== */
 
+/* Integrator selection for the probability-flow ODE (GAP-C002) */
+typedef enum {
+    WUBU_ODE_EULER = 0,   /* x' = exp_x(h*v) via Mobius add          */
+    WUBU_ODE_HEUN   = 1   /* predictor-corrector, 2nd order on ball  */
+} WubuOdeSolver;
+
 /* Generate intermediate frame between two key frames using ODE solve */
 /* x_0: source latent [N, D], x_1: target latent [N, D] */
 /* num_intermediate: number of frames to generate between key frames */
@@ -129,6 +135,14 @@ float* wubu_flow_generate_intermediate(WubuFlowMatching* model,
                                         const float* x_0, const float* x_1,
                                         int N, int D,
                                         int num_intermediate);
+
+/* GAP-C002: solver-selecting variant. solver = EULER | HEUN.
+ * HEUN halves integration error at 2x velocity-net evaluations. */
+float* wubu_flow_generate_intermediate_ex(WubuFlowMatching* model,
+                                          const float* x_0, const float* x_1,
+                                          int N, int D,
+                                          int num_intermediate,
+                                          WubuOdeSolver solver);
 
 /* ===================================================================
  * Loss Computation

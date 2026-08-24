@@ -48,6 +48,69 @@ static void test_geodesic_endpoints(void) {
     ASSERT_NEAR(mu[1], x1[1], 1e-3f);
 }
 
+static void test_heun_solver_on_manifold(void) {
+    /* GAP-C002 gate: HEUN integrator output must stay strictly on-ball and
+     * match EULER within a loose bound (same field, different order). */
+    WubuFlowMatching m; WubuFlowConfig cfg = {
+        .latent_dim=4,.hidden_dim=16,.num_layers=2,.num_freqs=4,
+        .sigma_min=0.01f,.sigma_max=0.1f,.learning_rate=0.01f,
+        .batch_size=4,.ode_steps=8 };
+    ASSERT_TRUE(wubu_flow_init(&m,&cfg,1.0f)==0);
+
+    float x0[8]={-0.5f,0.2f,-0.1f,0.05f,  0.3f,-0.4f,0.2f,0.1f};
+    float x1[8]={ 0.5f,-0.3f,0.1f,-0.05f, -0.2f,0.35f,-0.15f,-0.1f};
+    float *euler=wubu_flow_generate_intermediate_ex(&m,x0,x1,2,4,2,WUBU_ODE_EULER);
+    float *heun =wubu_flow_generate_intermediate_ex(&m,x0,x1,2,4,2,WUBU_ODE_HEUN);
+    ASSERT_TRUE(euler&&heun);
+    for(int i=0;i<2*2*4;i++) ASSERT_TRUE(!isnan(heun[i])&&!isinf(heun[i]));
+    for(int f=0;f<2;f++)
+        for(int i=0;i<2;i++){
+            float n2=0;
+            for(int d=0;d<4;d++){float v=heun[(f*2+i)*4+d];n2+=v*v;}
+            ASSERT_TRUE(n2<1.0f);   /* on-manifold */
+            float diff=0;
+            for(int d=0;d<4;d++){float df=heun[(f*2+i)*4+d]-euler[(f*2+i)*4+d];diff+=df*df;}
+            ASSERT_TRUE(diff<0.5f); /* same trajectory family */
+        }
+    free(euler);free(heun);wubu_flow_free(&m);
+}
+
+/* GAP-C003 gate: target velocity must be a tangent vector at mu_t —
+ * i.e. the geodesic from x0 stepped by h*v must stay on the ball and
+ * reduce distance to x1. The old Euclidean (x1-x0) shortcut fails this
+ * when ||x0|| is large (points toward off-ball). */
+static void test_target_velocity_is_tangent(void) {
+    float c = 1.0f;
+    float x0[4] = {-0.55f, 0.30f, -0.20f, 0.10f};   /* far-from-origin start */
+    float x1[4] = {0.60f, -0.25f, 0.15f, -0.05f};
+    int N = 1, D = 4;
+
+    for (float t = 0.1f; t < 0.95f; t += 0.2f) {
+        float v[4];
+        wubu_flow_target_velocity(v, x0, x1, t, N, D, c);
+
+        /* finite */
+        for (int d = 0; d < D; d++) ASSERT_TRUE(!isnan(v[d]) && !isinf(v[d]));
+
+        /* stepping mu_t along v stays strictly inside the unit ball */
+        float mu[4], step[4], ex[4], nxt[4];
+        wubu_flow_geodesic_interpolate(mu, x0, x1, t, N, D, c);
+        for (int d = 0; d < D; d++) step[d] = 1e-3f * v[d];
+        wubu_expmap(ex, step, D, c);
+        wubu_mobius_add(nxt, mu, ex, D, c);
+        float n2 = 0; for (int d = 0; d < D; d++) n2 += nxt[d]*nxt[d];
+        ASSERT_TRUE(n2 < 1.0f);   /* on-manifold */
+
+        /* and it moves TOWARD x1 (positive inner product with log_{mu}(x1)) */
+        float neg_mu[4], rel[4], lg[4];
+        for (int d = 0; d < D; d++) neg_mu[d] = -mu[d];
+        wubu_mobius_add(rel, neg_mu, x1, D, c);
+        wubu_logmap(lg, rel, D, c);
+        float dot = 0; for (int d = 0; d < D; d++) dot += v[d]*lg[d];
+        ASSERT_TRUE(dot > 0.0f);
+    }
+}
+
 static void test_geodesic_midpoint(void) {
     /* At t=0.5, μ should be between x_0 and x_1 */
     float x0[] = {0.1f, 0.0f, 0.0f, 0.0f};
@@ -218,6 +281,8 @@ int main(void) {
     RUN_TEST(test_geodesic_endpoints);
     RUN_TEST(test_geodesic_midpoint);
     RUN_TEST(test_geodesic_stays_on_manifold);
+    RUN_TEST(test_target_velocity_is_tangent);
+    RUN_TEST(test_heun_solver_on_manifold);
     RUN_TEST(test_velocity_net_init);
     RUN_TEST(test_velocity_prediction_finite);
     RUN_TEST(test_flow_loss_positive);

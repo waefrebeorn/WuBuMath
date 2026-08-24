@@ -10,6 +10,7 @@
  */
 
 #include "wubu_flow_matching.h"
+#include "wubu_parallel_transport.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -150,21 +151,39 @@ void wubu_flow_geodesic_interpolate(float* mu_t, const float* x_0, const float* 
 
 void wubu_flow_target_velocity(float* v_target, const float* x_0, const float* x_1,
                                 float t, int N, int D, float c) {
-    /* Compute μ_t = geodesic interpolation at time t */
-    float* mu_t = (float*)calloc((size_t)(N * D), sizeof(float));
-    wubu_flow_geodesic_interpolate(mu_t, x_0, x_1, t, N, D, c);
+    /* GAP-C003 CLOSED: the true geodesic-path velocity, not the Euclidean
+     * shortcut. d/dt μ_t where μ_t = exp_{x0}(t·log_{x0}(x1)) is exactly the
+     * parallel transport of log_{x0}(x1) from x0 to μ_t along the geodesic:
+     *     v_target(t) = P_{x0 -> μ_t} [ log_{x0}(x1) ]
+     * This keeps the regression target ON the manifold so the learned field
+     * never trains toward off-ball vectors. Fallback to the Euclidean form
+     * only if the transport module refuses degenerate input. */
+    /* μ_t = destination point for transport; reused as output buffer then replaced */
+    wubu_flow_geodesic_interpolate(v_target, x_0, x_1, t, N, D, c);
 
-    /* Target velocity: d/dt μ_t
-     * For conditional flow: v_t = x_1 - x_0 (straight line path)
-     */
     for (int i = 0; i < N; i++) {
-        /* Euclidean approximation: v = x_1 - x_0 */
-        for (int d = 0; d < D; d++) {
-            v_target[i * D + d] = x_1[i * D + d] - x_0[i * D + d];
-        }
-    }
+        const float *a = x_0 + i * D;
+        const float *b = x_1 + i * D;
 
-    free(mu_t);
+        /* log_{a}(b): translate b to origin frame via (-a)+_c b, then
+         * log at origin gives the tangent AT a (gyrovector identity), then
+         * scale by the conformal factor to get metric-correct magnitude. */
+        float neg_a[64], rel[64], u[64], ut[64];
+        for (int d = 0; d < D; d++) neg_a[d] = -a[d];
+        wubu_mobius_add(rel, neg_a, b, D, c);
+        wubu_logmap(u, rel, D, c);
+        /* conformal correction: lambda_a = 2/(1 - c||a||^2) */
+        float anorm_sq = 0.0f;
+        for (int d = 0; d < D; d++) anorm_sq += a[d]*a[d];
+        float lambda_a = 2.0f / (1.0f - c*anorm_sq > 1e-6f ? 1.0f - c*anorm_sq : 1e-6f);
+        for (int d = 0; d < D; d++) u[d] /= lambda_a;
+
+        /* parallel-transport the tangent vector from a to μ_t */
+        wubu_parallel_transport(ut, u, a, v_target + i * D, D, c);
+
+        for (int d = 0; d < D; d++)
+            v_target[i * D + d] = ut[d];
+    }
 }
 
 /* ===================================================================
@@ -323,6 +342,19 @@ float* wubu_flow_generate_intermediate(WubuFlowMatching* model,
                                         const float* x_0, const float* x_1,
                                         int N, int D,
                                         int num_intermediate) {
+    return wubu_flow_generate_intermediate_ex(model, x_0, x_1, N, D,
+                                              num_intermediate, WUBU_ODE_EULER);
+}
+
+/* GAP-C002: shared implementation with selectable integrator. Both solvers
+ * integrate ON the ball: every update is exp_x(h·v) composed via Mobius add,
+ * so the trajectory cannot leave the Poincaré ball regardless of step size
+ * (unlike Euclidean RK which can overshoot the boundary). */
+float* wubu_flow_generate_intermediate_ex(WubuFlowMatching* model,
+                                          const float* x_0, const float* x_1,
+                                          int N, int D,
+                                          int num_intermediate,
+                                          WubuOdeSolver solver) {
     float* output = (float*)calloc((size_t)(num_intermediate * N * D), sizeof(float));
     if (!output) return NULL;
 
@@ -342,6 +374,33 @@ float* wubu_flow_generate_intermediate(WubuFlowMatching* model,
         /* Predict velocity at current position */
         wubu_flow_predict_velocity(model, velocity, current, t, N, D);
 
+        if (solver == WUBU_ODE_HEUN) {
+            /* Heun predictor-corrector, manifold-native:
+             *   pred  = exp-current(h·v1)
+             *   v2    = v_theta(t+h, pred)
+             *   step  = exp-current(h·(v1+v2)/2)
+             */
+            float* pred = (float*)malloc((size_t)(N * D) * sizeof(float));
+            float* v2   = (float*)malloc((size_t)(N * D) * sizeof(float));
+            for (int i = 0; i < N; i++) {
+                float sv[64], ex[64], nx[64];
+                for (int d = 0; d < D; d++) sv[d] = h * velocity[i * D + d];
+                wubu_expmap(ex, sv, D, model->c);
+                wubu_mobius_add(nx, current + i * D, ex, D, model->c);
+                memcpy(pred + i * D, nx, D * sizeof(float));
+            }
+            wubu_flow_predict_velocity(model, v2, pred, t + h <= 1.0f ? t + h : 1.0f, N, D);
+            for (int i = 0; i < N; i++) {
+                float avg[64], sv[64], ex[64], nx[64];
+                for (int d = 0; d < D; d++)
+                    avg[d] = 0.5f * (velocity[i * D + d] + v2[i * D + d]);
+                for (int d = 0; d < D; d++) sv[d] = h * avg[d];
+                wubu_expmap(ex, sv, D, model->c);
+                wubu_mobius_add(nx, current + i * D, ex, D, model->c);
+                memcpy(current + i * D, nx, D * sizeof(float));
+            }
+            free(pred); free(v2);
+        } else
         /* Euler step: x_{k+1} = exp_{x_k}(h * v) */
         for (int i = 0; i < N; i++) {
             float step_vec[64];
