@@ -292,6 +292,10 @@ $(BIN)/test_lpos: $(SRC)/tests/test_wubu_learned_pos.c $(SRC)/math/wubu_learned_
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_learned_pos.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_radam: $(SRC)/tests/test_wubu_radam.c $(SRC)/math/wubu_radam.c $(SRC)/math/wubu_rsgd.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_radam.c $(SRC)/math/wubu_rsgd.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hmha: $(SRC)/tests/test_wubu_hmha.c $(SRC)/math/wubu_hmha.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hmha.c $< -o $@ $(LDFLAGS)
@@ -546,6 +550,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Poincaré LayerNorm ===" && $(BIN)/test_hnorm
 	@echo "=== Hyperbolic Transformer Block ===" && $(BIN)/test_hblock
 	@echo "=== Hyperbolic Multi-Head Attention ===" && $(BIN)/test_hmha
+	@echo "=== Riemannian Adam ===" && $(BIN)/test_radam
 	@echo "=== Learned Positional Embedding ===" && $(BIN)/test_lpos
 	@echo "=== Causal Mask ===" && $(BIN)/test_causal
 	@echo "=== KV Cache ===" && $(BIN)/test_kvc
