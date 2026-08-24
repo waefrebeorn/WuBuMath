@@ -426,3 +426,26 @@ float* wubu_flow_generate_intermediate_ex(WubuFlowMatching* model,
     free(velocity);
     return output;
 }
+
+
+/* GAP-C009: chained multi-keyframe rollout. Each leg is an independent
+ * probability-flow integration; chaining composes geodesic legs so the
+ * full trajectory visits every keyframe in order — the P-frame sequence. */
+float* wubu_flow_rollout(WubuFlowMatching* model,
+                         const float* key_latents,int M,int N,int D,
+                         int num_between,WubuOdeSolver solver){
+    if(M<2||num_between<=0) return NULL;
+    float* out=malloc(sizeof(float)*(size_t)(M-1)*num_between*N*D);
+    if(!out) return NULL;
+    for(int leg=0;leg<M-1;leg++){
+        const float* a=key_latents+(size_t)leg*N*D;
+        const float* b=key_latents+(size_t)(leg+1)*N*D;
+        float* seg=wubu_flow_generate_intermediate_ex(model,a,b,N,D,
+                                                      num_between,solver);
+        if(!seg){free(out);return NULL;}
+        memcpy(out+(size_t)leg*num_between*N*D,seg,
+               sizeof(float)*(size_t)num_between*N*D);
+        free(seg);
+    }
+    return out;
+}

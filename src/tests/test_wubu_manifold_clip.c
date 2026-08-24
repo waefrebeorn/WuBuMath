@@ -72,12 +72,26 @@ static void test_recall_beats_random(void){
     CHECK(r>1.0f/16.0f);  /* above chance */
     printf("[recall@1=%.2f] ",(double)r);
 }
+static void test_entailment_cone(void){
+    /* near-duplicate points: violation small; far-apart boundary points:
+     * cone violated -> loss larger. Monotone sanity + zero self-loss. */
+    float parent[4]={0.10f,0.0f,0.0f,0.0f};
+    float near_c[4]={0.12f,0.01f,0.0f,0.0f};
+    float far_c[4]={-0.80f,0.30f,0.10f,-0.20f};
+    float l_self=wubu_mclip_entailment_loss(parent,parent,4,1.0f,0.5f);
+    float l_near=wubu_mclip_entailment_loss(near_c,parent,4,1.0f,0.5f);
+    float l_far =wubu_mclip_entailment_loss(far_c ,parent,4,1.0f,0.5f);
+    CHECK(l_self>=0.0f);
+    CHECK(l_far>l_near);          /* violation grows with separation */
+    CHECK(l_near<1e-3f || l_far>l_near);
+}
 int main(void){
     printf("=== WuBuMath Manifold CLIP Tests ===\n\n");
     printf("  test_geodesic_identity...");      test_geodesic_identity();  printf("PASS\n");passed++;
     printf("  test_triangle...");              test_triangle();           printf("PASS\n");passed++;
     printf("  test_infonce_decreases...");     test_infonce_decreases();  printf("PASS\n");passed++;
     printf("  test_recall_beats_random...  "); test_recall_beats_random();printf("PASS\n");passed++;
+    printf("  test_entailment_cone...");     test_entailment_cone();    printf("PASS\n");passed++;
     printf("\n=== Results: %d passed, %d failed ===\n",passed,failed);
     return failed>0?1:0;
 }

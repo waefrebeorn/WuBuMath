@@ -57,6 +57,11 @@ float wubu_mclip_train_step(WubuManifoldClip* m,
                             const float* feat_a, const float* feat_b,
                             int B, int F);
 
+/* GAP-D004: entailment-cone loss — child inside parent's cone.
+ * kappa in (0,1]: cone openness at boundary. */
+float wubu_mclip_entailment_loss(const float* child, const float* parent,
+                                 int D, float c, float kappa);
+
 /* Retrieval accuracy@1 under geodesic nearest neighbor. */
 float wubu_mclip_recall_at1(WubuManifoldClip* m,
                             const float* feat_a, const float* feat_b,

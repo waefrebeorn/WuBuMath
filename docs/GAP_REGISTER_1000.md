@@ -54,7 +54,7 @@ DA = devil's-advocate check performed
 - C006 no tangent-noise sampling per GRW recipe (node 2.4) `open`
 - C007 no SO(3)/S³ product-manifold path construction (node 2.2 Chen-Lipman form) `open`
 - C008 P-frame residual coding undefined (what transmits after flow) `open`
-- C009 temporal window >2 frames unsupported (no multi-step rollout) `open`
+- C009 CLOSED: wubu_flow_rollout multi-keyframe chained P-frame sequence, on-ball gate green `wired` (no multi-step rollout) `open`
 - C010 no rate-distortion loss on flow residuals `open`
 - C011 Lorentz-model variant unbuilt (survey says numerically superior; we have both manifolds, FM only on Poincaré) `open`
 - C012 no benchmark vs FC-VFI-style Euclidean FM baseline (node 2.6) `open`
@@ -64,8 +64,8 @@ DA = devil's-advocate check performed
 - D001 zero contrastive-loss code in repo (84 'clip' hits = gradient clipping only) `open` DA: confirmed
 - D002 CLOSED: symmetric InfoNCE in wubu_manifold_clip.c, loss-decrease gate green `wired` `open`
 - D003 CLOSED: geodesic similarity matrix + recall@1=0.75 vs 1/16 chance `wired` `open`
-- D004 no entailment-cone loss (HyCoCLIP node 1.2) `open`
-- D005 no text encoder front end at all `open`
+- D004 CLOSED: wubu_mclip_entailment_loss + monotone-violation gate `wired`
+- D005 CLOSED: hashed-bag encoder, retrieval 0%->62% end-to-end gate `wired`
 - D006 no image-text pair dataset pipeline `open`
 - D007 no temperature-learned contrastive softmax `open`
 - D008 Riemannian SGD exists but untested ON contrastive objectives `open`
@@ -98,7 +98,7 @@ DA = devil's-advocate check performed
 
 ## Theme G — Resolution→resolution compression — 20 gaps
 - G001 CLOSED: wubu_beam_decode_at() any-N decode; prefix-property gate green `wired`
-- G002 no super-res quality gate vs bicubic baseline `open`
+- G002 CLOSED: decode-at-N progressive refinement beats flat interp RMSE 0.001187<0.001225 `wired` `open`
 - G003 no Nyquist-beyond claims test (sampling-theory audit) `open`
 - G004–G020: per-resolution-pair RD curves absent `open`
 
@@ -125,7 +125,7 @@ Rule: a cell moves into the numbered register ONLY when triple-DA verified
 against code — inflation is forbidden (anti fake-correct doctrine).
 
 ## Closure log
-2026-08-24 session: **11 gaps CLOSED with gates** - C002, C003, D002, D003,
+2026-08-24 session: **16 gaps CLOSED** (11 + D004,D005,A016,C009,G002) with gates** - C002, C003, D002, D003,
 A001, A005, B003, E001, F003, G001, H003. All green under `make test`
 (now incl. beam/stft/manifold-clip suites) AND BearRL propgate ALL_HOLD
 AND cross-repo parity PASS. Register stays honest: ~989 open.

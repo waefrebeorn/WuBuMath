@@ -223,3 +223,39 @@ float wubu_mclip_recall_at1(WubuManifoldClip* m,
     free(ea);free(eb);
     return (float)hits/(float)B;
 }
+
+/* =================================================================== */
+/* GAP-D004: Entailment-cone loss (HyCoCLIP lineage, node 1.2).        */
+/* x is ENTAILED by parent y iff the geodesic angle between them is    */
+/* within y's cone aperture:                                           */
+/*   apex(y) = arcsin( K / (sqrt(c)*||y||) ), K = sin(apex_0), 0<K<=1  */ 
+/* For ||y||->0 aperture -> pi/2 (root entails everything locally);    */
+/* toward boundary the cone tightens. Loss per pair:                   */
+/*   margin * d_geo(x,y) + relu(angle - apex(y))                       */
+/* i.e. pull entailed pairs together AND enforce the cone constraint.  */
+
+float wubu_mclip_entailment_loss(const float* child,const float* parent,
+                                 int D,float c,float kappa){
+    float p2=0;
+    for(int d=0;d<D;d++) p2+=parent[d]*parent[d];
+    /* angle between child and parent at parent: use Euclidean proxy of the
+     * gyroangle — cos theta via inner product (valid local approximation
+     * for contrastive shaping; exact gyrovectors are D-cell follow-up). */
+    float dot=0,n2=0;
+    for(int d=0;d<D;d++){ dot+=child[d]*parent[d]; n2+=child[d]*child[d]; }
+    float denom=sqrtf(p2*n2);
+    if(denom<1e-9f) return 0.0f;
+    float cos_t=dot/denom;
+    if(cos_t>1.0f)cos_t=1.0f; if(cos_t<-1.0f)cos_t=-1.0f;
+    float ang=acosf(cos_t);
+
+    float sn=p2>0?sinf(0.0f):0; (void)sn;
+    float norm_p=sqrtf(p2);
+    float sin_apex=kappa/(sqrtf(c)*norm_p+1e-6f);
+    if(sin_apex>1.0f) sin_apex=1.0f;
+    float apex=asinf(sin_apex);
+
+    float dist=wubu_mclip_geodesic(child,parent,D,c);
+    float violation=ang-apex; if(violation<0) violation=0;
+    return 0.1f*dist+violation;
+}

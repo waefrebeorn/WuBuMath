@@ -144,6 +144,13 @@ float* wubu_flow_generate_intermediate_ex(WubuFlowMatching* model,
                                           int num_intermediate,
                                           WubuOdeSolver solver);
 
+/* GAP-C009: multi-frame temporal rollout — walk keyframes k0..k_{M-1},
+ * generating num_between intermediates on each leg (geodesic-chained).
+ * Output: [(M-1)*num_between, N, D] latents. */
+float* wubu_flow_rollout(WubuFlowMatching* model,
+                         const float* key_latents, int M, int N, int D,
+                         int num_between, WubuOdeSolver solver);
+
 /* ===================================================================
  * Loss Computation
  * =================================================================== */

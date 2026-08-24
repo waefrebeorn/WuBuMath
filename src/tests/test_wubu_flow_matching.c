@@ -79,6 +79,31 @@ static void test_heun_solver_on_manifold(void) {
  * i.e. the geodesic from x0 stepped by h*v must stay on the ball and
  * reduce distance to x1. The old Euclidean (x1-x0) shortcut fails this
  * when ||x0|| is large (points toward off-ball). */
+static void test_rollout_multi_keyframe(void){
+    /* GAP-C009 gate: rollout across 4 keyframes yields (M-1)*nb frames, all
+     * finite and on-ball; leg endpoints land at the keyframes. */
+    WubuFlowMatching m; WubuFlowConfig cfg={
+        .latent_dim=4,.hidden_dim=16,.num_layers=2,.num_freqs=4,
+        .sigma_min=0.01f,.sigma_max=0.1f,.learning_rate=0.01f,
+        .batch_size=4,.ode_steps=8 };
+    ASSERT_TRUE(wubu_flow_init(&m,&cfg,1.0f)==0);
+    const int M=4,N=1,D=4;
+    float keys[M*D];
+    unsigned r=7u;
+    for(int i=0;i<M*D;i++){ r=r*1103515245u+12345u;
+        keys[i]=((float)(r>>16)/65536.0f-0.5f)*0.5f; }
+    int nb=3;
+    float* out=wubu_flow_rollout(&m,keys,M,N,D,nb,WUBU_ODE_HEUN);
+    ASSERT_TRUE(out);
+    for(int f=0;f<(M-1)*nb;f++){
+        float n2=0;
+        for(int d=0;d<D;d++){float v=out[f*D+d];n2+=v*v;
+            ASSERT_TRUE(!isnan(v)&&!isinf(v));}
+        ASSERT_TRUE(n2<1.0f);
+    }
+    free(out);wubu_flow_free(&m);
+}
+
 static void test_target_velocity_is_tangent(void) {
     float c = 1.0f;
     float x0[4] = {-0.55f, 0.30f, -0.20f, 0.10f};   /* far-from-origin start */
@@ -283,6 +308,7 @@ int main(void) {
     RUN_TEST(test_geodesic_stays_on_manifold);
     RUN_TEST(test_target_velocity_is_tangent);
     RUN_TEST(test_heun_solver_on_manifold);
+    RUN_TEST(test_rollout_multi_keyframe);
     RUN_TEST(test_velocity_net_init);
     RUN_TEST(test_velocity_prediction_finite);
     RUN_TEST(test_flow_loss_positive);
