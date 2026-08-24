@@ -240,6 +240,10 @@ $(BIN)/test_pm: $(SRC)/tests/test_wubu_prodman.c $(SRC)/math/wubu_prodman.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_prodman.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_hnorm: $(SRC)/tests/test_wubu_hnorm.c $(SRC)/math/wubu_hnorm.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hnorm.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_pflow: $(SRC)/tests/test_wubu_pflow.c $(SRC)/train/wubu_pflow.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_pflow.c $< -o $@ $(LDFLAGS)
@@ -479,6 +483,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== RD Mode Decision ===" && $(BIN)/test_rd
 	@echo "=== Hierarchical Merge (tree recovery) ===" && $(BIN)/test_hm
 	@echo "=== Poincaré Flow Matching ===" && $(BIN)/test_pflow
+	@echo "=== Poincaré LayerNorm ===" && $(BIN)/test_hnorm
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
 	@echo "=== Hierarchical Classification ===" && $(BIN)/test_hier
