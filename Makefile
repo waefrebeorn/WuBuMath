@@ -240,6 +240,10 @@ $(BIN)/test_pm: $(SRC)/tests/test_wubu_prodman.c $(SRC)/math/wubu_prodman.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_prodman.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_hr: $(SRC)/tests/test_wubu_hretrieval.c $(SRC)/math/wubu_hretrieval.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hretrieval.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_g2b: $(SRC)/tests/test_wubu_graph2ball.c $(SRC)/train/wubu_graph2ball.c $(SRC)/train/wubu_poincare_emb.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_graph2ball.c $(SRC)/train/wubu_poincare_emb.c $< -o $@ $(LDFLAGS)
@@ -539,6 +543,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic Logistic Regression ===" && $(BIN)/test_hlr
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
+	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
 	@echo "=== Hierarchical Classification ===" && $(BIN)/test_hier
