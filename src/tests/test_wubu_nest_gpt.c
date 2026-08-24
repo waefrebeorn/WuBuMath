@@ -33,6 +33,30 @@ static int tests_failed = 0;
  * Model init / free
  * =================================================================== */
 
+static void test_embed_input_mode(void){
+    /* GAP-D012: continuous features enter the SAME block stack; output
+     * finite + deterministic across two calls. */
+    WubuGPTConfig config = {
+        .vocab_size = 64,.d_model = 64,.n_heads = 4,.d_head = 16,
+        .d_compressed = 32,.d_ff = 128,.n_layers = 2,.dropout_rate = 0,
+        .seed = 42 };
+    WubuGPT m;
+    ASSERT_TRUE(wubu_gpt_init(&m,&config)==0);
+    const int B=1,T=8;
+    float* feats=malloc(sizeof(float)*B*T*config.d_model);
+    for(int i=0;i<B*T*config.d_model;i++)
+        feats[i]=sinf(0.1f*i)*0.3f;
+    float* h1=wubu_gpt_forward_embed(&m,feats,B,T,false);
+    float* h2=wubu_gpt_forward_embed(&m,feats,B,T,false);
+    ASSERT_TRUE(h1&&h2);
+    for(int i=0;i<B*T*config.d_model;i++){
+        ASSERT_TRUE(!isnan(h1[i])&&!isinf(h1[i]));
+        ASSERT_TRUE(fabsf(h1[i]-h2[i])<1e-5f);
+    }
+    free(h1);free(h2);free(feats);
+    wubu_gpt_free(&m);
+}
+
 static void test_gpt_init_free(void) {
     WubuGPTConfig config = {
         .vocab_size = 64,
@@ -180,6 +204,7 @@ int main(void) {
     RUN_TEST(test_gpt_forward_finite);
     RUN_TEST(test_gpt_compute_loss);
     RUN_TEST(test_gpt_param_count);
+    RUN_TEST(test_embed_input_mode);
 
     printf("\n=== Results: %d passed, %d failed ===\n", tests_passed, tests_failed);
     return tests_failed > 0 ? 1 : 0;

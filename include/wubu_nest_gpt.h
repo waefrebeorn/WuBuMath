@@ -131,6 +131,13 @@ int* wubu_gpt_generate(WubuGPT* model, const int* prompt, int prompt_len,
 
 long wubu_gpt_count_params(const WubuGPT* model);
 
+/* GAP-D012: embedding-input mode — language (or ANY modality already
+ * embedded by manifold-CLIP heads) enters the transformer through its
+ * continuous features instead of token-id lookup. feats: [B,T,d_model].
+ * Returns hidden states [B,T,d_model]; caller pools/projects downstream. */
+float* wubu_gpt_forward_embed(WubuGPT* model, const float* feats,
+                              int B, int T, bool training);
+
 #ifdef __cplusplus
 }
 #endif

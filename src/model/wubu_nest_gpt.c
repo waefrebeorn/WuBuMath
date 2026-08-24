@@ -221,10 +221,23 @@ void wubu_gpt_free(WubuGPT* model) {
  * Forward pass
  * =================================================================== */
 
+/* GAP-D012: continuous-input forward — any modality already embedded by
+ * manifold-CLIP heads enters here. Runs the SAME block stack, skips the
+ * LM head (caller owns downstream projection). Returns hidden states. */
+static float* gpt_blocks_forward(WubuGPT* model, float* h_in, int B, int T);
+
+float* wubu_gpt_forward_embed(WubuGPT* model, const float* feats,
+                              int B, int T, bool training) {
+    (void)training;
+    int D = model->D;
+    /* copy so the stack can mutate in place as it already does */
+    float* h = (float*)malloc((size_t)B*T*D*sizeof(float));
+    memcpy(h, feats, sizeof(float)*(size_t)B*T*D);
+    return gpt_blocks_forward(model, h, B, T);   /* takes ownership */
+}
+
 float* wubu_gpt_forward(WubuGPT* model, const int* tokens, int B, int T, bool training) {
-    int D = model->D, H = model->H, d_h = model->d_h;
-    int d_c = model->d_c, d_rope = model->d_rope, d_ff = model->d_ff;
-    int N = model->N;
+    int D = model->D;
 
     /* Allocate output logits [B, T, V] */
     float* logits = (float*)calloc(B * T * model->V, sizeof(float));
@@ -238,8 +251,23 @@ float* wubu_gpt_forward(WubuGPT* model, const int* tokens, int B, int T, bool tr
         }
     }
 
-    /* Forward through blocks */
-    float* h_curr = h;
+    /* Forward through blocks (+ final LN) — shared with embed mode */
+    float* hidden = gpt_blocks_forward(model, h, B, T);
+
+    /* LM head: logits = h @ lm_head_w -> [B, T, V] */
+    matmul(logits, hidden, model->lm_head_w, B * T, D, model->V);
+
+    free(hidden);
+    return logits;
+}
+
+/* GAP-D012 shared block stack: runs N transformer blocks + final LN.
+ * Takes ownership semantics like the old inline code: frees h_in. */
+static float* gpt_blocks_forward(WubuGPT* model, float* h_in, int B, int T) {
+    int D = model->D, H = model->H, d_h = model->d_h;
+    int d_c = model->d_c, d_rope = model->d_rope, d_ff = model->d_ff;
+    int N = model->N;
+    float* h_curr = h_in;
     for (int layer = 0; layer < N; layer++) {
         WubuGPTBlock* b = &model->blocks[layer];
         float* h_out = (float*)malloc(B * T * D * sizeof(float));
@@ -387,12 +415,7 @@ float* wubu_gpt_forward(WubuGPT* model, const int* tokens, int B, int T, bool tr
 
     /* Final layer norm */
     layernorm(h_curr, h_curr, model->ln_f_gamma, model->ln_f_beta, B * T, D);
-
-    /* LM head: logits = h @ lm_head_w -> [B, T, V] */
-    matmul(logits, h_curr, model->lm_head_w, B * T, D, model->V);
-
-    free(h_curr);
-    return logits;
+    return h_curr;
 }
 
 /* ===================================================================
