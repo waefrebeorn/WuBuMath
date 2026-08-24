@@ -79,6 +79,17 @@ static void test_heun_solver_on_manifold(void) {
  * i.e. the geodesic from x0 stepped by h*v must stay on the ball and
  * reduce distance to x1. The old Euclidean (x1-x0) shortcut fails this
  * when ||x0|| is large (points toward off-ball). */
+static void test_project_back_gate(void){
+    float lat[8]={0.5f,0.2f,-0.1f,0.05f,      /* inside: untouched */
+                  1.5f,1.2f,-0.8f,0.9f};       /* outside: projected */
+    int hit=wubu_flow_project_back(lat,2,4,0.999f);
+    ASSERT_TRUE(hit==1);
+    float n2a=0,n2b=0;
+    for(int d=0;d<4;d++){n2a+=lat[d]*lat[d];n2b+=lat[4+d]*lat[4+d];}
+    ASSERT_TRUE(n2a<1.0f);
+    ASSERT_TRUE(fabsf(sqrtf(n2b)-0.999f)<1e-3f);  /* rescaled to r_max */
+}
+
 static void test_rollout_multi_keyframe(void){
     /* GAP-C009 gate: rollout across 4 keyframes yields (M-1)*nb frames, all
      * finite and on-ball; leg endpoints land at the keyframes. */
@@ -309,6 +320,7 @@ int main(void) {
     RUN_TEST(test_target_velocity_is_tangent);
     RUN_TEST(test_heun_solver_on_manifold);
     RUN_TEST(test_rollout_multi_keyframe);
+    RUN_TEST(test_project_back_gate);
     RUN_TEST(test_velocity_net_init);
     RUN_TEST(test_velocity_prediction_finite);
     RUN_TEST(test_flow_loss_positive);

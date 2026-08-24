@@ -140,8 +140,34 @@ static void test_mask_and_invisible_reader(void){
     for(int i=0;i<24*32*3;i++) CHECK(out[i]<6.999f);
     wubu_beam_free(&b);
 }
+static void test_rate_account_and_layout(void){
+    WubuBeamConfig cfg={ .strip_width=100,.sweep_length=8,
+        .orientation=WUBU_BEAM_HORIZONTAL,
+        .bands={{50,true},{40,false},{10,false}} };
+    WubuBeam b; CHECK(wubu_beam_init(&b,&cfg)==0);
+    /* rate accounting: total = 100*100*3*log2(levels) */
+    float per[WUBU_BAND_COUNT];
+    float tot=wubu_beam_rate_account(&b,8,per);
+    CHECK(fabsf(tot-100.0f*100.0f*3.0f*3.0f)<1e-3f);   /* log2(8)=3 */
+    CHECK(per[1]/per[2]==4);                            /* 40 vs 10 width */
+    /* +1 quantization level adds one bit/sample: log2(16)-log2(8)=1 */
+    float tot2=wubu_beam_rate_account(&b,16,NULL);
+    CHECK(fabsf(tot2-tot-100.0f*100.0f*3.0f)<1e-3f);
+    /* interleaved layout: column->band mapping is a valid permutation-ish
+     * walk that respects band widths */
+    wubu_beam_set_layout(&b,WUBU_LAYOUT_INTERLEAVED);
+    int count[3]={0,0,0};
+    for(int c=0;c<100;c++){
+        int band=wubu_beam_column_to_band(&b,c);
+        CHECK(band>=0&&band<3);
+        count[band]++;
+    }
+    CHECK(count[0]==50&&count[1]==40&&count[2]==10);   /* widths preserved */
+    wubu_beam_free(&b);
+}
 int main(void){
     printf("=== WuBuMath Beam Canvas Tests ===\n\n");
+    test_rate_account_and_layout(); printf("  test_rate_account_and_layout...PASS\n");passed++;
     test_mask_and_invisible_reader(); printf("  test_mask_and_invisible_reader...PASS\n");passed++;
     test_decode_at_any_resolution(); printf("PASS\n");passed++;
     printf("  test_memory_independent_of_sweep..."); test_memory_independent_of_sweep(); printf("PASS\n");passed++;

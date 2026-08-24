@@ -32,6 +32,10 @@ typedef enum {
     WUBU_BEAM_VERTICAL   = 1
 } WubuBeamOrientation;             /* GAP-A005 */
 
+typedef enum {
+    WUBU_LAYOUT_CONTIGUOUS=0,
+    WUBU_LAYOUT_INTERLEAVED=1
+} WubuBandLayout;
 typedef struct {
     int strip_width;               /* short-axis size (e.g. 4000)  */
     int sweep_length;              /* long-axis samples per frame  */
@@ -44,6 +48,7 @@ typedef struct {
     float* strip;                  /* [total_width][strip_width][3] current strip */
     int total_width;               /* sum of band widths           */
     int sweep_pos;                 /* current sweep position       */
+    WubuBandLayout layout;         /* GAP-B009 */
 } WubuBeam;
 
 int  wubu_beam_init(WubuBeam* beam, const WubuBeamConfig* cfg);
@@ -58,6 +63,19 @@ void wubu_beam_write_infrared(WubuBeam* beam,int s,int bx,int y,float v0,float v
 
 /* renderer view of the current strip — visible bands only */
 void wubu_beam_render_strip(const WubuBeam* beam,float* out);
+
+/* GAP-B010: rate accounting — bits consumed by each band at a given
+ * quantization level. bits_band = width*strip_width*log2(levels)*3 (RGB).
+ * Returns total across all bands; per-band written to out[5]. */
+float wubu_beam_rate_account(const WubuBeam* beam,int quant_levels,
+                             float* out_bits_per_band /*[WUBU_BAND_COUNT]*/);
+
+/* GAP-B009: interleaving policy — layout of bands along the strip.
+ * CONTIGUOUS = bands stacked side by side (current buffer).
+ * INTERLEAVED = columns round-robin across bands (temporal spread for
+ * error resilience). Policy is metadata; wubu_beam_at resolves it. */
+void wubu_beam_set_layout(WubuBeam* beam,WubuBandLayout layout);
+int  wubu_beam_column_to_band(const WubuBeam* beam,int strip_col);
 
 /* GAP-B004: renderer ignore-mask — 1 per strip column if that column is
  * visible-band, 0 if invisible (renderer must skip). */

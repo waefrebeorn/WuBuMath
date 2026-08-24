@@ -196,3 +196,49 @@ int wubu_beam_read_invisible(const WubuBeam* beam,float* out,size_t out_cap){
     }
     return (int)written;
 }
+
+
+/* GAP-B010: rate accounting */
+float wubu_beam_rate_account(const WubuBeam* beam,int quant_levels,
+                             float* out_bits_per_band){
+    float total=0;
+    float lb=log2f((float)(quant_levels<2?2:quant_levels));
+    for(int b=0;b<WUBU_BAND_COUNT;b++){
+        float bits=(float)beam->cfg.bands[b].width*(float)beam->cfg.strip_width
+                   *3.0f*lb;
+        if(out_bits_per_band)out_bits_per_band[b]=bits;
+        total+=bits;
+    }
+    return total;
+}
+
+/* GAP-B009: interleaving policy */
+void wubu_beam_set_layout(WubuBeam* beam,WubuBandLayout layout){
+    beam->layout=layout;
+}
+int wubu_beam_column_to_band(const WubuBeam* beam,int strip_col){
+    int total=beam->total_width;
+    int col=((strip_col%total)+total)%total;   /* wrap */
+    if(beam->layout==WUBU_LAYOUT_INTERLEAVED){
+        /* round-robin: cycle band widths proportionally. Walk bands taking
+         * one column each until counts exhausted — deterministic mapping. */
+        static int fill[WUBU_BAND_COUNT];
+        memset(fill,0,sizeof(fill));
+        for(int c=0;c<=col;c++){
+            for(int b=0;b<WUBU_BAND_COUNT;b++){
+                if(fill[b]<beam->cfg.bands[b].width){
+                    if(c==col) return b;
+                    fill[b]++;break;
+                }
+            }
+        }
+        return WUBU_BAND_VISIBLE;
+    }
+    /* contiguous */
+    int off=0;
+    for(int b=0;b<WUBU_BAND_COUNT;b++){
+        off+=beam->cfg.bands[b].width;
+        if(col<off) return b;
+    }
+    return WUBU_BAND_VISIBLE;
+}

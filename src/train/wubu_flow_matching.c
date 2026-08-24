@@ -449,3 +449,22 @@ float* wubu_flow_rollout(WubuFlowMatching* model,
     }
     return out;
 }
+
+
+/* GAP-C005: drift guard. The HEUN/EULER steps are manifold-native so drift
+ * should never occur, but learned velocity nets can push numerically past
+ * the boundary on adversarial inputs — this gate makes that detectable AND
+ * recoverable instead of producing NaNs downstream. */
+int wubu_flow_project_back(float* latents,int N,int D,float r_max){
+    int projected=0;
+    for(int i=0;i<N;i++){
+        float n2=0;
+        for(int d=0;d<D;d++) n2+=latents[(size_t)i*D+d]*latents[(size_t)i*D+d];
+        if(n2>=(r_max)*(r_max)){
+            float s=r_max/sqrtf(n2);
+            for(int d=0;d<D;d++) latents[(size_t)i*D+d]*=s;
+            projected++;
+        }
+    }
+    return projected;
+}

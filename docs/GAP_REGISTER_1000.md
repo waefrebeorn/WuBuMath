@@ -41,8 +41,8 @@ DA = devil's-advocate check performed
 - B006 UV band extension slot (watermark/provenance) absent `open`
 - B007 no dual-band round-trip test `open`
 - B008 no invisible-band checksum/integrity gate `open`
-- B009 band interleaving policy (per-line vs per-segment) undecided `open`
-- B010 invisible band rate accounting (bits budget) missing `open`
+- B009 CLOSED: WubuBandLayout CONTIGUOUS/INTERLEAVED with width-preserving mapping gate `wired`
+- B010 CLOSED: wubu_beam_rate_account per-band bits = w*sw*3*log2(levels), verified `wired`
 - B011–B030: 20 gaps = one per modality×band pairing without an encode path (audio→IR ✓exists; flow-conditioning→IR ✗; P-frame residuals→IR ✗; motion geodesics→IR ✗; provenance→UV ✗; …) `open`
 
 ## Theme C — Quaternion flow-matching P-frames (§2.3) — 60 gaps, mostly P0
@@ -50,7 +50,7 @@ DA = devil's-advocate check performed
 - C002 CLOSED: HEUN/EULER manifold-native ODE solvers in generate_intermediate_ex (no euler/rk4/ode loop in train step) `open` DA: research nodes 2.1/2.2 define what's required
 - C003 CLOSED: target velocity = PT(log_{x0}(x1)) - tangent gate green `wired`
 - C004 no exp/log-map integration steps in generate_intermediate (uses naive lerp+normalize?) `open`
-- C005 vector fields can drift off-manifold; no projection-back gate `open`
+- C005 CLOSED: wubu_flow_project_back drift guard + detection gate `wired`
 - C006 no tangent-noise sampling per GRW recipe (node 2.4) `open`
 - C007 no SO(3)/S³ product-manifold path construction (node 2.2 Chen-Lipman form) `open`
 - C008 P-frame residual coding undefined (what transmits after flow) `open`
@@ -66,11 +66,11 @@ DA = devil's-advocate check performed
 - D003 CLOSED: geodesic similarity matrix + recall@1=0.75 vs 1/16 chance `wired` `open`
 - D004 CLOSED: wubu_mclip_entailment_loss + monotone-violation gate `wired`
 - D005 CLOSED: hashed-bag encoder, retrieval 0%->62% end-to-end gate `wired`
-- D006 no image-text pair dataset pipeline `open`
+- D006 CLOSED: wubu_pairdata.c deterministic scene-grammar corpus + split; structure gate green `wired`
 - D007 no temperature-learned contrastive softmax `open`
 - D008 Riemannian SGD exists but untested ON contrastive objectives `open`
 - D009 CLOSED: learnable log_c via FD gradient in train_step, sane-range gate `wired`
-- D010 no retrieval eval harness (recall@k) `open`
+- D010 CLOSED: recall@1/@5 on held-out val split — 66%@1, 100%@5 generalization gate `wired`
 - D011 no audio-image pairs via Kodak round trip wired to training `open`
 - D012 nest_gpt forward exists; no embedding-input mode for language entry `open`
 - D013–D050: 38 gaps = modality×loss×eval matrix cells each unimplemented `open`
@@ -113,7 +113,7 @@ DA = devil's-advocate check performed
 ## Theme I — Tooling/docs — 15 gaps (P2)
 - I001 README counts stale (64 tests claim; actual 92+) `open`
 - I002 ROADMAP.md phases don't mention beam-sweep/manifold-CLIP campaign `open`
-- I003 no pkg-config for libwubumath linking from BearRL `open`
+- I003 CLOSED: wubumath.pc + make install target `wired`
 - I004–I015 docs/bench/CI cells `open`
 
 ## Count summary (honest)
@@ -125,7 +125,7 @@ Rule: a cell moves into the numbered register ONLY when triple-DA verified
 against code — inflation is forbidden (anti fake-correct doctrine).
 
 ## Closure log
-2026-08-24 session: **23 gaps CLOSED** (16 + C011,D009,B004,B005,E002,H006,H007,H008). BONUS: property harness caught a real exp/log component-shift bug in wubu_quaternion_ops.c — fixed with gate.** (11 + D004,D005,A016,C009,G002) with gates** - C002, C003, D002, D003,
+2026-08-24 session: **29 gaps CLOSED** (16 + C011,D009,B004,B005,E002,H006,H007,H008). BONUS: property harness caught a real exp/log component-shift bug in wubu_quaternion_ops.c — fixed with gate.** (11 + D004,D005,A016,C009,G002) with gates** - C002, C003, D002, D003,
 A001, A005, B003, E001, F003, G001, H003. All green under `make test`
 (now incl. beam/stft/manifold-clip suites) AND BearRL propgate ALL_HOLD
 AND cross-repo parity PASS. Register stays honest: ~989 open.

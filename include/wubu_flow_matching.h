@@ -144,6 +144,11 @@ float* wubu_flow_generate_intermediate_ex(WubuFlowMatching* model,
                                           int num_intermediate,
                                           WubuOdeSolver solver);
 
+/* GAP-C005: projection-back gate. Any point with ||x||>=1 is rescaled to
+ * r_max (0.999) radially; on-ball points untouched. Returns 1 if any
+ * projection occurred (drift detected), 0 if all clean. */
+int wubu_flow_project_back(float* latents, int N, int D, float r_max);
+
 /* GAP-C009: multi-frame temporal rollout — walk keyframes k0..k_{M-1},
  * generating num_between intermediates on each leg (geodesic-chained).
  * Output: [(M-1)*num_between, N, D] latents. */
