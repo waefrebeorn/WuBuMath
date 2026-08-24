@@ -216,6 +216,10 @@ $(BIN)/test_pa: $(SRC)/tests/test_wubu_psychoacoustic.c $(SRC)/audio/wubu_psycho
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/audio/wubu_psychoacoustic.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_aroll: $(SRC)/tests/test_wubu_attn_rollout.c $(SRC)/math/wubu_attn_rollout.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_attn_rollout.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hier: $(SRC)/tests/test_wubu_hier.c $(SRC)/math/wubu_hier.c $(SRC)/math/wubu_tree_embed.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hier.c $(SRC)/math/wubu_tree_embed.c $< -o $@ $(LDFLAGS)
@@ -440,6 +444,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
 	@echo "=== Hierarchical Classification ===" && $(BIN)/test_hier
+	@echo "=== Attention Rollout ===" && $(BIN)/test_aroll
 	@echo "=== Psychoacoustic Masking ===" && $(BIN)/test_pa
 	@echo "=== Pair Retrieval (D006/D010) ===" && $(BIN)/test_pairs
 	@echo "=== Kodak Audio-Image Tests ===" && $(BIN)/test_kodak
