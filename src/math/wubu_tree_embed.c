@@ -43,19 +43,24 @@ int wubu_tree_embed(const int* parent,int n,int D,float tau,float* out){
         const float* pp=out+(size_t)p*D;
         float* cp=out+(size_t)i*D;
 
-        /* compute direction: away from grandparent, or arbitrary if p is root */
+        /* compute direction: away from grandparent, rotated per child */
         float dir[64];int dd=D<64?D:64;
+        /* count siblings before i to get rotation offset */
+        int sib=0;
+        for(int j=parent[p]+1;j<i;j++)if(parent[j]==p)sib++;
+        float base_angle;
         if(parent[p]!=-1&&dd>=2){
-            /* direction from parent's parent through parent, extended */
             const float* gp=out+(size_t)parent[p]*D;
-            for(int d=0;d<dd;d++)dir[d]=pp[d]-gp[d];
+            float dx=pp[0]-gp[0],dy=(dd>1)?(pp[1]-gp[1]):0;
+            base_angle=atan2f(dy,dx);   /* outward direction angle */
         }else{
-            /* root's children: spread evenly using golden-angle offsets */
-            float angle=2.39996f*(float)i;  /* golden angle for max separation */
-            dir[0]=cosf(angle);
-            if(dd>1)dir[1]=sinf(angle);
-            for(int d=2;d<dd;d++)dir[d]=0;
+            base_angle=2.39996f*(float)i;
         }
+        /* rotate by sibling index * golden angle to separate children */
+        float ang=base_angle+2.39996f*(float)sib;
+        dir[0]=cosf(ang);
+        if(dd>1)dir[1]=sinf(ang);
+        for(int d=2;d<dd;d++)dir[d]=0;
         /* normalize */
         float nn=sqrtf(dir[0]*dir[0]+dir[1]*dir[1]);
         for(int d=2;d<dd;d++)nn+=dir[d]*dir[d];
