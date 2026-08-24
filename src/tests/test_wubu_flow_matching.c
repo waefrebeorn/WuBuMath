@@ -79,6 +79,34 @@ static void test_heun_solver_on_manifold(void) {
  * i.e. the geodesic from x0 stepped by h*v must stay on the ball and
  * reduce distance to x1. The old Euclidean (x1-x0) shortcut fails this
  * when ||x0|| is large (points toward off-ball). */
+static void test_learnable_curvature_fm(void){
+    /* GAP-C013 gate: with learning enabled, curvature MOVES during training
+     * and stays in a sane band; trajectories remain on-ball throughout. */
+    WubuFlowMatching m; WubuFlowConfig cfg={
+        .latent_dim=4,.hidden_dim=16,.num_layers=2,.num_freqs=4,
+        .sigma_min=0.01f,.sigma_max=0.1f,.learning_rate=0.01f,
+        .batch_size=4,.ode_steps=8 };
+    ASSERT_TRUE(wubu_flow_init(&m,&cfg,1.0f)==0);
+    wubu_flow_set_learn_curvature(&m,1);
+    float c0=m.c;
+    float x0[4]={-0.5f,0.2f,-0.1f,0.05f};
+    float x1[4]={ 0.5f,-0.3f,0.1f,-0.05f};
+    /* train_step samples its own pairs from a key-latent pool */
+    float pool[8]={-0.5f,0.2f,-0.1f,0.05f,  0.5f,-0.3f,0.1f,-0.05f};
+    for(int s=0;s<50;s++) wubu_flow_train_step(&m,pool,2,4);
+    float c1=m.c;
+    ASSERT_TRUE(fabsf(c1-c0)>1e-6f);       /* geometry moved */
+    ASSERT_TRUE(c1>0.1f&&c1<10.0f);        /* sane band      */
+    /* on-ball after a rollout under learned geometry */
+    float* out=wubu_flow_generate_intermediate_ex(&m,x0,x1,1,4,2,WUBU_ODE_HEUN);
+    ASSERT_TRUE(out);
+    for(int f=0;f<2;f++){
+        float n2=0;for(int d=0;d<4;d++)n2+=out[f*4+d]*out[f*4+d];
+        ASSERT_TRUE(n2<1.0f);
+    }
+    free(out);wubu_flow_free(&m);
+}
+
 static void test_tangent_noise_on_manifold(void){
     /* GAP-C006 gate: noised latents stay on-ball, and mean displacement
      * grows with sigma (the noise is real, not a no-op). */
@@ -373,6 +401,7 @@ int main(void) {
     RUN_TEST(test_project_back_gate);
     RUN_TEST(test_pframe_residual_rd);
     RUN_TEST(test_tangent_noise_on_manifold);
+    RUN_TEST(test_learnable_curvature_fm);
     RUN_TEST(test_velocity_net_init);
     RUN_TEST(test_velocity_prediction_finite);
     RUN_TEST(test_flow_loss_positive);

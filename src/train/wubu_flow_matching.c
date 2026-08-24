@@ -58,6 +58,8 @@ int wubu_flow_init(WubuFlowMatching* model, const WubuFlowConfig* config, float 
     model->config = *config;
     model->c = c;
     model->step_count = 0;
+    model->learn_curvature = 0;
+    model->log_c = logf(c);
 
     WubuVelocityNet* net = &model->velocity_net;
     net->latent_dim = config->latent_dim;
@@ -330,6 +332,22 @@ float wubu_flow_train_step(WubuFlowMatching* model,
     }
 
     model->step_count++;
+
+    /* GAP-C013: curvature as a learned parameter. Finite-difference the
+     * loss w.r.t. log_c and step it (smaller LR — geometry moves slower
+     * than weights). Only when enabled at init. */
+    if (model->learn_curvature) {
+        float geo_lr = 0.02f * lr;
+        float eps = 1e-2f;
+        float old = model->log_c;
+        model->c = expf(old + eps);
+        float lp = wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
+        model->c = expf(old - eps);
+        float lm = wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
+        model->log_c = old - geo_lr * (lp - lm) / (2*eps);
+        model->c = expf(model->log_c);
+        return wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
+    }
     return loss;
 }
 
@@ -529,4 +547,10 @@ void wubu_flow_tangent_noise(WubuFlowMatching* model,float* latents,
         wubu_mobius_add(nx,x,ex,D,model->c);
         for(int d=0;d<D;d++) x[d]=nx[d];
     }
+}
+
+
+/* GAP-C013: enable/disable curvature learning at runtime. */
+void wubu_flow_set_learn_curvature(WubuFlowMatching* model,int enable){
+    model->learn_curvature=enable;
 }

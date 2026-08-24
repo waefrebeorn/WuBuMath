@@ -77,6 +77,8 @@ typedef struct {
     WubuVelocityNet velocity_net;
     WubuFlowConfig config;
     float c;              /* Poincaré ball curvature */
+    int learn_curvature;  /* GAP-C013: FD-learn c during training */
+    float log_c;          /* internal param, c = exp(log_c) */
     int step_count;
 } WubuFlowMatching;
 
@@ -156,6 +158,9 @@ float* wubu_pframe_residual_encode(const float* pred, const float* x1,
 void wubu_pframe_residual_decode(float* recon, const float* pred,
                                   const float* qres, int N, int D,
                                   int levels);
+
+/* GAP-C013: curvature learning toggle. */
+void wubu_flow_set_learn_curvature(WubuFlowMatching* model, int enable);
 
 /* GAP-C006: GRW-style tangent noise (Geodesic Random Walk recipe, node 2.4).
  * Samples gaussian noise in the tangent space at each point and maps it to

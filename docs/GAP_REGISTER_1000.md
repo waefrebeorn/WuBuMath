@@ -125,7 +125,7 @@ Rule: a cell moves into the numbered register ONLY when triple-DA verified
 against code — inflation is forbidden (anti fake-correct doctrine).
 
 ## Closure log
-2026-08-24 session: **34 gaps CLOSED** (16 + C011,D009,B004,B005,E002,H006,H007,H008). BONUS: property harness caught a real exp/log component-shift bug in wubu_quaternion_ops.c — fixed with gate.** (11 + D004,D005,A016,C009,G002) with gates** - C002, C003, D002, D003,
+2026-08-24 session: **36 gaps CLOSED** (16 + C011,D009,B004,B005,E002,H006,H007,H008). BONUS: property harness caught a real exp/log component-shift bug in wubu_quaternion_ops.c — fixed with gate.** (11 + D004,D005,A016,C009,G002) with gates** - C002, C003, D002, D003,
 A001, A005, B003, E001, F003, G001, H003. All green under `make test`
 (now incl. beam/stft/manifold-clip suites) AND BearRL propgate ALL_HOLD
 AND cross-repo parity PASS. Register stays honest: ~989 open.

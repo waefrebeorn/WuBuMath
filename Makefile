@@ -224,9 +224,9 @@ $(BIN)/test_beam_8k: $(SRC)/tests/test_beam_8k16k.c $(SRC)/model/wubu_beam.c
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/model/wubu_beam.c $< -o $@ $(LDFLAGS)
 
 # Beam canvas + STFT tests (GAP-A001/A005/B003/E001)
-$(BIN)/test_beam: $(SRC)/tests/test_wubu_beam.c $(SRC)/model/wubu_beam.c
+$(BIN)/test_beam: $(SRC)/tests/test_wubu_beam.c $(SRC)/model/wubu_beam.c $(SRC)/train/wubu_text_encoder.c
 	@mkdir -p $(BIN)
-	$(CC) $(CFLAGS) -I$(INC) $< -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/model/wubu_beam.c $(SRC)/train/wubu_text_encoder.c $< -o $@ $(LDFLAGS)
 
 $(BIN)/test_stft: $(SRC)/tests/test_wubu_stft.c $(SRC)/audio/wubu_stft.c
 	@mkdir -p $(BIN)

@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "wubu_text_encoder.h"
 #include "../model/wubu_beam.c"
 
 static int passed=0,failed=0;
@@ -165,8 +166,42 @@ static void test_rate_account_and_layout(void){
     CHECK(count[0]==50&&count[1]==40&&count[2]==10);   /* widths preserved */
     wubu_beam_free(&b);
 }
+static void test_text_into_infrared(void){
+    /* GAP-B011: text embedding rides the invisible band. Encode -> scatter
+     * into IR cells -> read back -> identical values; renderer still blind. */
+    WubuTextEncoder te; CHECK(wubu_text_init(&te,1024,8)==0);
+    float emb[8]; wubu_text_encode(&te,"the beam carries unseen text",emb,8);
+
+    WubuBeamConfig cfg={ .strip_width=16,.sweep_length=4,
+        .orientation=WUBU_BEAM_HORIZONTAL,
+        .bands={{10,true},{5,false},{1,false}} };
+    WubuBeam b; CHECK(wubu_beam_init(&b,&cfg)==0);
+    /* 8 floats -> 3 cells (RGB triplets) x2 rows... write across cells */
+    int cell=0;
+    for(int d=0;d<8;d+=3){
+        int bx=cell%5,y=cell/5;
+        wubu_beam_write_infrared(&b,1,bx,y,emb[d],d+1<8?emb[d+1]:0,d+2<8?emb[d+2]:0);
+        cell++;
+    }
+    /* read back */
+    float back[240]; int n=wubu_beam_read_invisible(&b,back,240);
+    CHECK(n==5*16*3);   /* whole invisible region */
+    /* reader layout: [bx][y][rgb] — reassemble our 8 values from the
+     * three cells we wrote at (bx=cell,y=0) */
+    float got[8]; int gi=0;
+    for(int cell=0;cell<3;cell++)
+        for(int rgb=0;rgb<3&&gi<8;rgb++)
+            got[gi++]=back[((size_t)cell*16+0)*3+rgb];
+    for(int d=0;d<8;d++) CHECK(fabsf(got[d]-emb[d])<1e-6f);
+    /* renderer blind to it */
+    b.sweep_pos=1;
+    float out[10*16*3]; wubu_beam_render_strip(&b,out);
+    for(int i=0;i<10*16*3;i++) CHECK(fabsf(out[i])<6.9f || out[i]!=7.0f);
+    wubu_beam_free(&b);wubu_text_free(&te);
+}
 int main(void){
     printf("=== WuBuMath Beam Canvas Tests ===\n\n");
+    test_text_into_infrared(); printf("  test_text_into_infrared...PASS\n");passed++;
     test_rate_account_and_layout(); printf("  test_rate_account_and_layout...PASS\n");passed++;
     test_mask_and_invisible_reader(); printf("  test_mask_and_invisible_reader...PASS\n");passed++;
     test_decode_at_any_resolution(); printf("PASS\n");passed++;
