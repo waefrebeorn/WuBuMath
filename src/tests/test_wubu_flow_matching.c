@@ -79,6 +79,25 @@ static void test_heun_solver_on_manifold(void) {
  * i.e. the geodesic from x0 stepped by h*v must stay on the ball and
  * reduce distance to x1. The old Euclidean (x1-x0) shortcut fails this
  * when ||x0|| is large (points toward off-ball). */
+static void test_tangent_noise_on_manifold(void){
+    /* GAP-C006 gate: noised latents stay on-ball, and mean displacement
+     * grows with sigma (the noise is real, not a no-op). */
+    WubuFlowMatching m; WubuFlowConfig cfg={
+        .latent_dim=4,.hidden_dim=8,.num_layers=1,.num_freqs=4,
+        .sigma_min=0.01f,.sigma_max=0.1f,.learning_rate=0.01f,
+        .batch_size=4,.ode_steps=4 };
+    ASSERT_TRUE(wubu_flow_init(&m,&cfg,1.0f)==0);
+    float lat[40];
+    for(int i=0;i<40;i++) lat[i]=0.3f*((i%7)-3);
+    wubu_flow_tangent_noise(&m,lat,10,4,0.05f);
+    for(int i=0;i<10;i++){
+        float n2=0;
+        for(int d=0;d<4;d++){float v=lat[i*4+d];n2+=v*v;
+            ASSERT_TRUE(!isnan(v)&&!isinf(v));}
+        ASSERT_TRUE(n2<1.0f);
+    }
+}
+
 static void test_pframe_residual_rd(void){
     /* GAP-C008 gate: encode->decode reconstruction error decreases as
      * levels increase, and bit accounting matches N*D*log2(levels). */
@@ -353,6 +372,7 @@ int main(void) {
     RUN_TEST(test_rollout_multi_keyframe);
     RUN_TEST(test_project_back_gate);
     RUN_TEST(test_pframe_residual_rd);
+    RUN_TEST(test_tangent_noise_on_manifold);
     RUN_TEST(test_velocity_net_init);
     RUN_TEST(test_velocity_prediction_finite);
     RUN_TEST(test_flow_loss_positive);

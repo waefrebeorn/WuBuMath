@@ -499,3 +499,34 @@ void wubu_pframe_residual_decode(float* recon,const float* pred,
     (void)levels;
     for(size_t i=0;i<(size_t)N*D;i++) recon[i]=pred[i]+qres[i];
 }
+
+
+/* GAP-C006: tangent-space noise per the GRW/RSGM recipe:
+ *   1. draw v ~ N(0, sigma^2 I) in the LOCAL tangent frame at x
+ *      (for the Poincare ball we approximate the local frame with the
+ *       conformal scaling: v_tangent = lambda_x^{-1} * eps, keeping the
+ *       effective step size metric-correct),
+ *   2. x <- exp_x(v_tangent) via Mobius add.
+ * The result stays strictly on the manifold by construction. */
+void wubu_flow_tangent_noise(WubuFlowMatching* model,float* latents,
+                              int N,int D,float sigma){
+    for(int i=0;i<N;i++){
+        float* x=latents+(size_t)i*D;
+        /* conformal factor lambda = 2/(1 - c||x||^2) */
+        float n2=0;
+        for(int d=0;d<D;d++) n2+=x[d]*x[d];
+        float denom=1.0f-model->c*n2;
+        if(denom<1e-4f) denom=1e-4f;
+        float lam_inv=denom*0.5f;
+        float eps[64],ex[64],nx[64];
+        for(int d=0;d<D;d++){
+            /* Box-Muller */
+            float u1=fm_rng_float()+1e-7f,u2=fm_rng_float();
+            float g=sqrtf(-2.0f*logf(u1))*cosf(2.0f*(float)M_PI*u2);
+            eps[d]=sigma*g*lam_inv;
+        }
+        wubu_expmap(ex,eps,D,model->c);
+        wubu_mobius_add(nx,x,ex,D,model->c);
+        for(int d=0;d<D;d++) x[d]=nx[d];
+    }
+}

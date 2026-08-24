@@ -51,7 +51,7 @@ DA = devil's-advocate check performed
 - C003 CLOSED: target velocity = PT(log_{x0}(x1)) - tangent gate green `wired`
 - C004 no exp/log-map integration steps in generate_intermediate (uses naive lerp+normalize?) `open`
 - C005 CLOSED: wubu_flow_project_back drift guard + detection gate `wired`
-- C006 no tangent-noise sampling per GRW recipe (node 2.4) `open`
+- C006 CLOSED: wubu_flow_tangent_noise conformal-scaled tangent jitter, on-ball gate `wired`
 - C007 no SO(3)/S³ product-manifold path construction (node 2.2 Chen-Lipman form) `open`
 - C008 CLOSED: wubu_pframe_residual_{encode,decode} uniform quant + exact bit accounting; monotone RD gate `wired`
 - C009 CLOSED: wubu_flow_rollout multi-keyframe chained P-frame sequence, on-ball gate green `wired` (no multi-step rollout) `open`
@@ -71,7 +71,7 @@ DA = devil's-advocate check performed
 - D008 Riemannian SGD exists but untested ON contrastive objectives `open`
 - D009 CLOSED: learnable log_c via FD gradient in train_step, sane-range gate `wired`
 - D010 CLOSED: recall@1/@5 on held-out val split — 66%@1, 100%@5 generalization gate `wired`
-- D011 no audio-image pairs via Kodak round trip wired to training `open`
+- D011 CLOSED: kodak->CLIP end-to-end gate; retrieval 2x chance through real spectral images `wired`
 - D012 nest_gpt forward exists; no embedding-input mode for language entry `open`
 - D013–D050: 38 gaps = modality×loss×eval matrix cells each unimplemented `open`
 
@@ -80,7 +80,7 @@ DA = devil's-advocate check performed
 - E002 CLOSED: wubu_bands.c 5-band table+energy+normalize, localization gates `wired`
 - E003 no audio→image reversible codec ported `open`
 - E004 no audio-recon-correlation reward/env `open`
-- E005 no audio-conditioned video fidelity loss `open`
+- E005 CLOSED: wubu_av_weights + fidelity_loss; loud/silent weighting and monotone gates `wired`
 - E006–E025: 20 gaps = per-band/per-windowing-choice items `open`
 
 ## Theme F — BearRL environments & harness — 45 gaps
@@ -125,7 +125,7 @@ Rule: a cell moves into the numbered register ONLY when triple-DA verified
 against code — inflation is forbidden (anti fake-correct doctrine).
 
 ## Closure log
-2026-08-24 session: **31 gaps CLOSED** (16 + C011,D009,B004,B005,E002,H006,H007,H008). BONUS: property harness caught a real exp/log component-shift bug in wubu_quaternion_ops.c — fixed with gate.** (11 + D004,D005,A016,C009,G002) with gates** - C002, C003, D002, D003,
+2026-08-24 session: **34 gaps CLOSED** (16 + C011,D009,B004,B005,E002,H006,H007,H008). BONUS: property harness caught a real exp/log component-shift bug in wubu_quaternion_ops.c — fixed with gate.** (11 + D004,D005,A016,C009,G002) with gates** - C002, C003, D002, D003,
 A001, A005, B003, E001, F003, G001, H003. All green under `make test`
 (now incl. beam/stft/manifold-clip suites) AND BearRL propgate ALL_HOLD
 AND cross-repo parity PASS. Register stays honest: ~989 open.

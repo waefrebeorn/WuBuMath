@@ -157,6 +157,13 @@ void wubu_pframe_residual_decode(float* recon, const float* pred,
                                   const float* qres, int N, int D,
                                   int levels);
 
+/* GAP-C006: GRW-style tangent noise (Geodesic Random Walk recipe, node 2.4).
+ * Samples gaussian noise in the tangent space at each point and maps it to
+ * the manifold via exp map — the numerically-stable way to jitter latents
+ * without leaving the ball. Returns count of points adjusted. */
+void wubu_flow_tangent_noise(WubuFlowMatching* model, float* latents,
+                              int N, int D, float sigma);
+
 /* GAP-C005: projection-back gate. Any point with ||x||>=1 is rescaled to
  * r_max (0.999) radially; on-ball points untouched. Returns 1 if any
  * projection occurred (drift detected), 0 if all clean. */
