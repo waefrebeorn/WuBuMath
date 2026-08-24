@@ -244,6 +244,10 @@ $(BIN)/test_hkm: $(SRC)/tests/test_wubu_hkmedoids.c $(SRC)/math/wubu_hkmedoids.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hkmedoids.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_hvakl: $(SRC)/tests/test_wubu_hvae_kl.c $(SRC)/train/wubu_hvae_kl.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_hvae_kl.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hae: $(SRC)/tests/test_wubu_hae.c $(SRC)/train/wubu_hae.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_hae.c $< -o $@ $(LDFLAGS)
@@ -593,6 +597,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
 	@echo "=== Hyperbolic Decision Tree ===" && $(BIN)/test_hdt
 	@echo "=== Hyperbolic Autoencoder ===" && $(BIN)/test_hae
+	@echo "=== Hyperbolic VAE KL ===" && $(BIN)/test_hvakl
 	@echo "=== Hyperbolic K-Medoids ===" && $(BIN)/test_hkm
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
