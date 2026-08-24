@@ -144,6 +144,19 @@ float* wubu_flow_generate_intermediate_ex(WubuFlowMatching* model,
                                           int num_intermediate,
                                           WubuOdeSolver solver);
 
+/* GAP-C008: P-frame residual coding. After flow prediction, the residual
+ * r = x1 - pred is uniformly quantized to `levels` bins over [-mx,mx].
+ * Returns malloc'd quantized residual [N*D] and writes the bits needed
+ * (N*D*log2(levels)) to *out_bits. Decoder reconstructs pred+dequant(r). */
+float* wubu_pframe_residual_encode(const float* pred, const float* x1,
+                                    int N, int D, int levels,
+                                    float* out_bits);
+
+/* decode side: recon = pred + dequantized residual */
+void wubu_pframe_residual_decode(float* recon, const float* pred,
+                                  const float* qres, int N, int D,
+                                  int levels);
+
 /* GAP-C005: projection-back gate. Any point with ||x||>=1 is rescaled to
  * r_max (0.999) radially; on-ball points untouched. Returns 1 if any
  * projection occurred (drift detected), 0 if all clean. */

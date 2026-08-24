@@ -468,3 +468,34 @@ int wubu_flow_project_back(float* latents,int N,int D,float r_max){
     }
     return projected;
 }
+
+
+/* GAP-C008: uniform scalar residual quantization + exact bit accounting. */
+float* wubu_pframe_residual_encode(const float* pred,const float* x1,
+                                    int N,int D,int levels,float* out_bits){
+    size_t n=(size_t)N*D;
+    float* q=malloc(sizeof(float)*n);
+    if(!q) return NULL;
+    if(levels<2)levels=2;
+    /* residual range from prediction error */
+    float mx=1e-9f;
+    for(size_t i=0;i<n;i++){
+        float r=x1[i]-pred[i];
+        float a=fabsf(r); if(a>mx)mx=a;
+    }
+    float step=2*mx/(float)levels;
+    for(size_t i=0;i<n;i++){
+        float r=x1[i]-pred[i];
+        int b=(int)((r+mx)/step);
+        if(b<0)b=0; if(b>=levels)b=levels-1;
+        q[i]=-mx+(b+0.5f)*step;   /* dequantized immediately (symmetric) */
+    }
+    if(out_bits) *out_bits=(float)n*log2f((float)levels);
+    return q;
+}
+
+void wubu_pframe_residual_decode(float* recon,const float* pred,
+                                  const float* qres,int N,int D,int levels){
+    (void)levels;
+    for(size_t i=0;i<(size_t)N*D;i++) recon[i]=pred[i]+qres[i];
+}

@@ -79,6 +79,37 @@ static void test_heun_solver_on_manifold(void) {
  * i.e. the geodesic from x0 stepped by h*v must stay on the ball and
  * reduce distance to x1. The old Euclidean (x1-x0) shortcut fails this
  * when ||x0|| is large (points toward off-ball). */
+static void test_pframe_residual_rd(void){
+    /* GAP-C008 gate: encode->decode reconstruction error decreases as
+     * levels increase, and bit accounting matches N*D*log2(levels). */
+    const int N=4,D=4;
+    float pred[N*D],x1[N*D];
+    unsigned r=5u;
+    for(int i=0;i<N*D;i++){
+        r=r*1103515245u+12345u;
+        pred[i]=((float)(r>>16)/65536.0f-0.5f)*0.4f;
+        r=r*1103515245u+12345u;
+        x1[i]=pred[i]+((float)(r>>16)/65536.0f-0.5f)*0.2f;
+    }
+    float prev_err=1e30f;
+    for(int lv=4;lv<=64;lv*=2){
+        float bits; 
+        float* q=wubu_pframe_residual_encode(pred,x1,N,D,lv,&bits);
+        ASSERT_TRUE(q);
+        /* exact bit count */
+        float expect=(float)N*D*log2f((float)lv);
+        ASSERT_TRUE(fabsf(bits-expect)<1e-3f);
+        float rec[N*D];
+        wubu_pframe_residual_decode(rec,pred,q,N,D,lv);
+        float err=0;
+        for(int i=0;i<N*D;i++){float df=rec[i]-x1[i];err+=df*df;}
+        err=sqrtf(err/(N*D));
+        ASSERT_TRUE(err<prev_err);   /* monotone RD improvement */
+        prev_err=err;
+        free(q);
+    }
+}
+
 static void test_project_back_gate(void){
     float lat[8]={0.5f,0.2f,-0.1f,0.05f,      /* inside: untouched */
                   1.5f,1.2f,-0.8f,0.9f};       /* outside: projected */
@@ -321,6 +352,7 @@ int main(void) {
     RUN_TEST(test_heun_solver_on_manifold);
     RUN_TEST(test_rollout_multi_keyframe);
     RUN_TEST(test_project_back_gate);
+    RUN_TEST(test_pframe_residual_rd);
     RUN_TEST(test_velocity_net_init);
     RUN_TEST(test_velocity_prediction_finite);
     RUN_TEST(test_flow_loss_positive);
