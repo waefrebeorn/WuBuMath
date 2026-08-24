@@ -240,6 +240,10 @@ $(BIN)/test_pm: $(SRC)/tests/test_wubu_prodman.c $(SRC)/math/wubu_prodman.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_prodman.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_hmds: $(SRC)/tests/test_wubu_hmds.c $(SRC)/math/wubu_hmds.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hmds.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hkrum: $(SRC)/tests/test_wubu_hkrum.c $(SRC)/math/wubu_hkrum.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hkrum.c $< -o $@ $(LDFLAGS)
@@ -519,6 +523,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== KV Cache ===" && $(BIN)/test_kvc
 	@echo "=== Poincaré Embeddings ===" && $(BIN)/test_pemb
 	@echo "=== Hyperbolic Krum Outliers ===" && $(BIN)/test_hkrum
+	@echo "=== Hyperbolic MDS ===" && $(BIN)/test_hmds
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
 	@echo "=== Hierarchical Classification ===" && $(BIN)/test_hier
