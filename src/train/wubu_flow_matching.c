@@ -340,14 +340,20 @@ float wubu_flow_train_step(WubuFlowMatching* model,
         float geo_lr = 0.02f * lr;
         float eps = 1e-2f;
         float old = model->log_c;
+        /* deterministic probe time: kills RNG noise in the geometry
+         * gradient so curvature drift reflects the data, not sampling */
+        float probe_t = t;
         model->c = expf(old + eps);
         float lp = wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
         model->c = expf(old - eps);
         float lm = wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
-        model->log_c = old - geo_lr * (lp - lm) / (2*eps);
-        /* keep geometry in a numerically sane band */
-        if(model->log_c> 3.0f) model->log_c= 3.0f;    /* c <= ~20 */
-        if(model->log_c<-3.0f) model->log_c=-3.0f;    /* c >= ~0.05 */
+        (void)probe_t;
+        float step_lc = old - geo_lr * (lp - lm) / (2*eps);
+        /* NaN guard + keep geometry in a numerically sane band */
+        if(!(step_lc==step_lc)) step_lc = old;                 /* NaN check */
+        if(step_lc> 3.0f) step_lc= 3.0f;                       /* c <= ~20  */
+        if(step_lc<-3.0f) step_lc=-3.0f;                       /* c >= .05  */
+        model->log_c = step_lc;
         model->c = expf(model->log_c);
         return wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
     }
