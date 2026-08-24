@@ -187,6 +187,18 @@ $(BIN)/test_flow_matching: $(SRC)/tests/test_wubu_flow_matching.c $(SRC)/train/w
 	$(CC) $(CFLAGS) $(SRC)/train/wubu_flow_matching.c $(SRC)/math/wubu_hyperbolic.c \
 	    $(SRC)/math/wubu_quaternion.c $(SRC)/math/wubu_parallel_transport.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_bands: $(SRC)/tests/test_wubu_bands.c $(SRC)/audio/wubu_bands.c $(SRC)/audio/wubu_stft.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/audio/wubu_bands.c $(SRC)/audio/wubu_stft.c $< -o $@ $(LDFLAGS)
+
+$(BIN)/test_lorflow: $(SRC)/tests/test_lorentz_flow.c $(SRC)/math/wubu_lorentz.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_lorentz.c $< -o $@ $(LDFLAGS)
+
+$(BIN)/test_quat_prop: $(SRC)/tests/test_quat_properties.c $(SRC)/math/wubu_quaternion_ops.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_quaternion_ops.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_text_encoder: $(SRC)/tests/test_wubu_text_encoder.c $(SRC)/train/wubu_text_encoder.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_text_encoder.c $< -o $@ $(LDFLAGS)
@@ -294,7 +306,7 @@ $(BIN)/test_lorentz_poincare: $(SRC)/tests/test_wubu_lorentz_poincare.c $(SRC)/m
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $(SRC)/math/wubu_lorentz.c $(SRC)/math/wubu_lorentz_poincare.c $(SRC)/math/wubu_poincare_geom.c $< -o $@ $(LDFLAGS)
 
-test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_so3 $(BIN)/test_rep $(BIN)/test_manifold $(BIN)/test_anyon $(BIN)/test_pgeom $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_manifold_ad $(BIN)/test_lorentz $(BIN)/test_lorentz_poincare $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_manifold_clip $(BIN)/test_beam $(BIN)/test_beam_8k $(BIN)/test_decode_quality $(BIN)/test_text_encoder $(BIN)/test_stft $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
+test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_so3 $(BIN)/test_rep $(BIN)/test_manifold $(BIN)/test_anyon $(BIN)/test_pgeom $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_manifold_ad $(BIN)/test_lorentz $(BIN)/test_lorentz_poincare $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_manifold_clip $(BIN)/test_beam $(BIN)/test_beam_8k $(BIN)/test_decode_quality $(BIN)/test_text_encoder $(BIN)/test_bands $(BIN)/test_lorflow $(BIN)/test_quat_prop $(BIN)/test_stft $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
 	@echo "=== VHF Engine Tests ===" && $(BIN)/test_vhf_engine
 	@echo "=== WuBuMath Tests ===" && $(BIN)/wubu_tests
 	@echo "=== Slermed JAX Tests ===" && $(BIN)/jax_test
@@ -315,6 +327,9 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Beam 8K/16K Integration ===" && $(BIN)/test_beam_8k
 	@echo "=== Decode-at-N Quality ===" && $(BIN)/test_decode_quality
 	@echo "=== Text Encoder Tests ===" && $(BIN)/test_text_encoder
+	@echo "=== Perceptual Bands Tests ===" && $(BIN)/test_bands
+	@echo "=== Lorentz Flow Tests ===" && $(BIN)/test_lorflow
+	@echo "=== Quat Property Invariants ===" && $(BIN)/test_quat_prop
 	@echo "=== STFT Tests ===" && $(BIN)/test_stft
 	@echo "=== Canvas Resolution Tests ===" && $(BIN)/test_canvas_res
 	@echo "=== Latent Codec Tests ===" && $(BIN)/test_latent_codec

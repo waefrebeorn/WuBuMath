@@ -72,6 +72,7 @@ int wubu_mclip_init(WubuManifoldClip* m,const WubuMclipConfig* cfg){
         m->proj_b[i]=(mc_uniform()*2-1)*s;
     }
     m->log_tau=0.0f;                 /* tau = e^0 = 1 */
+    m->log_c=0.0f;                   /* c = e^0 = 1 (GAP-D009) */
     m->step_count=0;
     m->initialized=true;
     return 0;
@@ -99,11 +100,13 @@ void wubu_mclip_embed(WubuManifoldClip* m,const float* feat,int F,
     }
 }
 
+float wubu_mclip_curvature(const WubuManifoldClip* m){ return expf(m->log_c); }
+
 void wubu_mclip_similarity_matrix(WubuManifoldClip* m,
                                   const float* emb_a,const float* emb_b,
                                   int Ba,int Bb,int D,float* sim){
     float tau=expf(m->log_tau);
-    float c=1.0f;   /* unit curvature; curvature learning = D009 */
+    float c=expf(m->log_c);   /* GAP-D009: learned curvature */
     for(int i=0;i<Ba;i++)
         for(int j=0;j<Bb;j++)
             sim[i*(size_t)Bb+j]=
@@ -196,6 +199,21 @@ float wubu_mclip_train_step(WubuManifoldClip* m,
     wubu_mclip_embed(m,feat_b,F,m->proj_b,D,eb,B);
     wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
     float after=wubu_mclip_infonce(m,sim,B,NULL);
+
+    /* GAP-D009: curvature gradient by finite difference on log_c */
+    {
+        float eps=5e-2f;
+        float old=m->log_c;
+        m->log_c=old+eps;
+        wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
+        float lp=wubu_mclip_infonce(m,sim,B,NULL);
+        m->log_c=old-eps;
+        wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
+        float lm=wubu_mclip_infonce(m,sim,B,NULL);
+        m->log_c=old - 0.05f*(lp-lm)/(2*eps);   /* smaller LR for geometry */
+    }
+    wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
+    after=wubu_mclip_infonce(m,sim,B,NULL);
 
     m->step_count++;
     free(ea);free(eb);free(sim);

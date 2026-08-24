@@ -164,3 +164,35 @@ void wubu_beam_decode_at(const int* order,int sweep_length,
         out_positions[i]=order[rank];
     }
 }
+
+
+/* GAP-B004: visibility mask across strip columns */
+void wubu_beam_visibility_mask(const WubuBeam* beam,char* mask){
+    int off=0;
+    for(int b=0;b<WUBU_BAND_COUNT;b++){
+        for(int i=0;i<beam->cfg.bands[b].width;i++)
+            mask[off+i]=beam->cfg.bands[b].visible?1:0;
+        off+=beam->cfg.bands[b].width;
+    }
+}
+
+/* GAP-B005: read every invisible payload in the current strip.
+ * Returns number of floats written. */
+int wubu_beam_read_invisible(const WubuBeam* beam,float* out,size_t out_cap){
+    int sw=beam->cfg.strip_width;
+    size_t written=0;
+    for(int b=0;b<WUBU_BAND_COUNT;b++){
+        if(beam->cfg.bands[b].visible) continue;
+        int off=wubu_beam_band_offset(beam,(WubuBandId)b);
+        for(int bx=0;bx<beam->cfg.bands[b].width;bx++)
+            for(int y=0;y<sw;y++){
+                const float* src=beam->strip
+                    +(size_t)(off+bx)*(size_t)sw*3u+(size_t)y*3u;
+                if(written+3>out_cap) return (int)written;
+                out[written++]=src[0];
+                out[written++]=src[1];
+                out[written++]=src[2];
+            }
+    }
+    return (int)written;
+}

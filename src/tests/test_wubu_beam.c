@@ -113,8 +113,36 @@ static void test_decode_at_any_resolution(void){
     }
     free(order);
 }
+static void test_mask_and_invisible_reader(void){
+    WubuBeamConfig cfg={ .strip_width=32,.sweep_length=16,
+        .orientation=WUBU_BEAM_HORIZONTAL,
+        .bands={{24,true},{6,false},{2,false}} };
+    WubuBeam b; CHECK(wubu_beam_init(&b,&cfg)==0);
+    char mask[32];
+    wubu_beam_visibility_mask(&b,mask);
+    int vis=0,invis=0;
+    for(int i=0;i<32;i++){vis+=mask[i];invis+=!mask[i];}
+    CHECK(vis==24&&invis==8);          /* mask matches band registry */
+
+    /* poison infrared with a signature */
+    for(int x=0;x<6;x++)for(int y=0;y<32;y++)
+        wubu_beam_write_infrared(&b,3,x,y,7.0f,7.0f,7.0f);
+    float inv[8*32*3];
+    int n=wubu_beam_read_invisible(&b,inv,sizeof(inv)/sizeof(float));
+    CHECK(n==8*32*3);
+    int hits=0;
+    for(int i=0;i<n;i+=3)
+        if(inv[i]==7.0f&&inv[i+1]==7.0f&&inv[i+2]==7.0f)hits++;
+    CHECK(hits==6*32);                 /* every invisible cell recovered */
+    /* and none of it is visible-band data */
+    float out[24*32*3]; b.sweep_pos=3;
+    wubu_beam_render_strip(&b,out);
+    for(int i=0;i<24*32*3;i++) CHECK(out[i]<6.999f);
+    wubu_beam_free(&b);
+}
 int main(void){
     printf("=== WuBuMath Beam Canvas Tests ===\n\n");
+    test_mask_and_invisible_reader(); printf("  test_mask_and_invisible_reader...PASS\n");passed++;
     test_decode_at_any_resolution(); printf("PASS\n");passed++;
     printf("  test_memory_independent_of_sweep..."); test_memory_independent_of_sweep(); printf("PASS\n");passed++;
     printf("  test_infrared_never_renders...");      test_infrared_never_renders();     printf("PASS\n");passed++;

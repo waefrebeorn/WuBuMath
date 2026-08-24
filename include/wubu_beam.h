@@ -59,6 +59,14 @@ void wubu_beam_write_infrared(WubuBeam* beam,int s,int bx,int y,float v0,float v
 /* renderer view of the current strip — visible bands only */
 void wubu_beam_render_strip(const WubuBeam* beam,float* out);
 
+/* GAP-B004: renderer ignore-mask — 1 per strip column if that column is
+ * visible-band, 0 if invisible (renderer must skip). */
+void wubu_beam_visibility_mask(const WubuBeam* beam,char* mask /*[total_width]*/);
+
+/* GAP-B005: codec-side invisible-band reader — copies ALL invisible band
+ * payloads of the current strip into out [invisible_width*strip_width*3]. */
+int wubu_beam_read_invisible(const WubuBeam* beam,float* out,size_t out_cap);
+
 /* φ-fractal visit order along the sweep (GAP-A009 foundation):
  * order[k] = sweep position of the k-th sample. */
 void wubu_beam_phi_order(int* order, int sweep_length);

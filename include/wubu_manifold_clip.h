@@ -29,12 +29,16 @@ typedef struct {
     float* proj_a;      /* [D,F] modality-A head (image)  */
     float* proj_b;      /* [D,F] modality-B head (text/audio) */
     float log_tau;      /* learnable temperature, tau = exp(log_tau) */
+    float log_c;        /* GAP-D009: learnable curvature, c = exp(log_c) */
     int step_count;
     bool initialized;
 } WubuManifoldClip;
 
 int  wubu_mclip_init(WubuManifoldClip* m, const WubuMclipConfig* cfg);
 void wubu_mclip_free(WubuManifoldClip* m);
+
+/* Learned curvature accessor (GAP-D009): c = exp(log_c). */
+float wubu_mclip_curvature(const WubuManifoldClip* m);
 
 /* Geodesic distance on the Poincaré ball (curvature c). GAP-D003. */
 float wubu_mclip_geodesic(const float* a, const float* b, int D, float c);

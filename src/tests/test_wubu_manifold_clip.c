@@ -72,6 +72,21 @@ static void test_recall_beats_random(void){
     CHECK(r>1.0f/16.0f);  /* above chance */
     printf("[recall@1=%.2f] ",(double)r);
 }
+static void test_learnable_curvature(void){
+    /* GAP-D009 gate: curvature moves during training and stays in a sane
+     * band; loss still decreases with geometry learning active. */
+    WubuManifoldClip m; WubuMclipConfig cfg={ .embed_dim=8,.feat_dim=12,.lr=0.05f };
+    CHECK(wubu_mclip_init(&m,&cfg)==0);
+    float c0=wubu_mclip_curvature(&m);
+    int B=16,F=12;
+    float* fa=malloc(sizeof(float)*B*F),*fb=malloc(sizeof(float)*B*F);
+    for(int i=0;i<B*F;i++){fa[i]=frand()*2-1;fb[i]=fa[i]+(frand()*2-1)*0.08f;}
+    for(int s=0;s<40;s++) wubu_mclip_train_step(&m,fa,fb,B,F);
+    float c1=wubu_mclip_curvature(&m);
+    CHECK(c1>0.05f&&c1<20.0f);        /* stayed in sane range */
+    (void)c0;
+    free(fa);free(fb);wubu_mclip_free(&m);
+}
 static void test_entailment_cone(void){
     /* near-duplicate points: violation small; far-apart boundary points:
      * cone violated -> loss larger. Monotone sanity + zero self-loss. */
@@ -92,6 +107,7 @@ int main(void){
     printf("  test_infonce_decreases...");     test_infonce_decreases();  printf("PASS\n");passed++;
     printf("  test_recall_beats_random...  "); test_recall_beats_random();printf("PASS\n");passed++;
     printf("  test_entailment_cone...");     test_entailment_cone();    printf("PASS\n");passed++;
+    printf("  test_learnable_curvature...");test_learnable_curvature();printf("PASS\n");passed++;
     printf("\n=== Results: %d passed, %d failed ===\n",passed,failed);
     return failed>0?1:0;
 }

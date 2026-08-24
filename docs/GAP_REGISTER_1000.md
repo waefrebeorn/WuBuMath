@@ -36,8 +36,8 @@ DA = devil's-advocate check performed
 - B001 infrared band concept absent from codebase entirely `open` DA: grep infrared|dual_band|invisible → 0
 - B002 audio currently occupies fixed HBI cols; no generalized invisible payload channel `open`
 - B003 CLOSED: WubuBandId registry VISIBLE/INFRARED/UV; infrared-leak gate green `wired`
-- B004 renderer-side ignore-mask undefined `open`
-- B005 codec-side invisible-band reader undefined `open`
+- B004 CLOSED: wubu_beam_visibility_mask, registry-matched gate `wired`
+- B005 CLOSED: wubu_beam_read_invisible recovers every invisible cell `wired`
 - B006 UV band extension slot (watermark/provenance) absent `open`
 - B007 no dual-band round-trip test `open`
 - B008 no invisible-band checksum/integrity gate `open`
@@ -56,7 +56,7 @@ DA = devil's-advocate check performed
 - C008 P-frame residual coding undefined (what transmits after flow) `open`
 - C009 CLOSED: wubu_flow_rollout multi-keyframe chained P-frame sequence, on-ball gate green `wired` (no multi-step rollout) `open`
 - C010 no rate-distortion loss on flow residuals `open`
-- C011 Lorentz-model variant unbuilt (survey says numerically superior; we have both manifolds, FM only on Poincaré) `open`
+- C011 CLOSED: Lorentz geodesic interpolation+rollout on hyperboloid, L(x,x)=-1 gates green `wired` (survey says numerically superior; we have both manifolds, FM only on Poincaré) `open`
 - C012 no benchmark vs FC-VFI-style Euclidean FM baseline (node 2.6) `open`
 - C013–C060: 48 gaps = per-layer integration items (curvature learnable during FM? scale-aware maps in velocity net? boundary submanifold conditioning? per-level flows F_i as FM fields? …each verified absent) `open`
 
@@ -69,7 +69,7 @@ DA = devil's-advocate check performed
 - D006 no image-text pair dataset pipeline `open`
 - D007 no temperature-learned contrastive softmax `open`
 - D008 Riemannian SGD exists but untested ON contrastive objectives `open`
-- D009 curvature c_i not learned jointly with embedding objective `open`
+- D009 CLOSED: learnable log_c via FD gradient in train_step, sane-range gate `wired`
 - D010 no retrieval eval harness (recall@k) `open`
 - D011 no audio-image pairs via Kodak round trip wired to training `open`
 - D012 nest_gpt forward exists; no embedding-input mode for language entry `open`
@@ -77,7 +77,7 @@ DA = devil's-advocate check performed
 
 ## Theme E — Audio sideband fidelity trainer (§2.4) — 25 gaps
 - E001 CLOSED: wubu_stft.c radix-2 FFT + WOLA inverse; round-trip corr 1.00000 `wired`
-- E002 no perceptual-band split (bass/mids/presence/treble/harmonics) `open`
+- E002 CLOSED: wubu_bands.c 5-band table+energy+normalize, localization gates `wired`
 - E003 no audio→image reversible codec ported `open`
 - E004 no audio-recon-correlation reward/env `open`
 - E005 no audio-conditioned video fidelity loss `open`
@@ -125,7 +125,7 @@ Rule: a cell moves into the numbered register ONLY when triple-DA verified
 against code — inflation is forbidden (anti fake-correct doctrine).
 
 ## Closure log
-2026-08-24 session: **16 gaps CLOSED** (11 + D004,D005,A016,C009,G002) with gates** - C002, C003, D002, D003,
+2026-08-24 session: **23 gaps CLOSED** (16 + C011,D009,B004,B005,E002,H006,H007,H008). BONUS: property harness caught a real exp/log component-shift bug in wubu_quaternion_ops.c — fixed with gate.** (11 + D004,D005,A016,C009,G002) with gates** - C002, C003, D002, D003,
 A001, A005, B003, E001, F003, G001, H003. All green under `make test`
 (now incl. beam/stft/manifold-clip suites) AND BearRL propgate ALL_HOLD
 AND cross-repo parity PASS. Register stays honest: ~989 open.

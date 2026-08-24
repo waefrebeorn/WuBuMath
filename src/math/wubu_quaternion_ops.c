@@ -200,18 +200,21 @@ void wubu_quat_slerp(float* out, const float* p0, const float* p1, float t) {
 
 /* Quaternion exponential: exp(v) for pure quaternion v = (0, vx, vy, vz)
  * exp(v) = (cos(||v||), sin(||v||) * v/||v||)
- */
+ * GAP-H008 FIX: v is now read as a pure QUATERNION (w ignored, vector in
+ * v[1..3]) matching wubu_quat_log's output convention. Previously exp read
+ * the vector from v[0..2], making log(exp(v)) shift components — caught by
+ * this property gate. */
 void wubu_quat_exp(float* out, const float* v) {
-    float vnorm = sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+    float vnorm = sqrtf(v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
     if (vnorm < 1e-8f) {
         out[0] = 1.0f; out[1] = 0.0f; out[2] = 0.0f; out[3] = 0.0f;
         return;
     }
     float s = sinf(vnorm) / vnorm;
     out[0] = cosf(vnorm);
-    out[1] = v[0] * s;
-    out[2] = v[1] * s;
-    out[3] = v[2] * s;
+    out[1] = v[1] * s;
+    out[2] = v[2] * s;
+    out[3] = v[3] * s;
 }
 
 /* Quaternion logarithm: log(q) for unit quaternion q
