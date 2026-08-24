@@ -13,6 +13,7 @@
  * by construction of exp0.
  */
 #include "wubu_hlinear.h"
+#include "wubu_lorentz.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -64,5 +65,26 @@ int wubu_hlinear_forward(const float* W,        /* [D_out, D_in] */
         lorentz_exp0(tanv,out+(size_t)i*(D_out+1),D_out+1);
     }
     free(tanv);
+    return 0;
+}
+
+/* GAP-C018: hyperbolic activation — the HGCN tangent-space pattern:
+ * log_0 -> pointwise Euclidean activation -> exp_0.
+ * act_name 0 = ReLU, 1 = tanh. Output stays on the hyperboloid. */
+int wubu_hactivation(const float* x,int N,int D,float c,
+                     int act_name,float* out){
+    if(!x||!out||D<1) return -1;
+    float v[64];int dd=D<64?D:64;
+    for(int i=0;i<N;i++){
+        const float* xi=x+(size_t)i*(D+1);
+        lorentz_log0(xi,v,dd);
+        for(int d=0;d<dd;d++){
+            if(act_name==0) v[d]=v[d]>0?v[d]:0;      /* ReLU */
+            else v[d]=tanhf(v[d]);                    /* tanh */
+        }
+        /* pad with zeros if truncated */
+        for(int d=dd;d<D;d++)v[d]=0;
+        lorentz_exp0(v,out+(size_t)i*(D+1),D+1);
+    }
     return 0;
 }

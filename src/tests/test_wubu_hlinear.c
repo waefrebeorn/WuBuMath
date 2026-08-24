@@ -66,3 +66,4 @@ int main(void){
     printf("\n=== Results: %d passed, %d failed ===\n",passed,failed);
     return failed>0?1:0;
 }
+/* GAP-C018 gates appended via separate main-less file inclusion pattern */

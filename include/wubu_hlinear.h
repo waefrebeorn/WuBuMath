@@ -11,6 +11,10 @@ extern "C" {
 int wubu_hlinear_forward(const float* W,const float* b_space,
                          const float* x,int N,int D_in,int D_out,
                          float c,float* out);
+/* GAP-C018: hyperbolic activation — log0 -> pointwise act -> exp0.
+ * act_name: 0=ReLU, 1=tanh. x/out: [N, D+1] on the hyperboloid. */
+int wubu_hactivation(const float* x,int N,int D,float c,
+                     int act_name,float* out);
 #ifdef __cplusplus
 }
 #endif
