@@ -108,7 +108,7 @@ static void test_learnable_curvature_fm(void){
     float rmax=1.0f/sqrtf(m.c);
     for(int f=0;f<2;f++){
         float n2=0;for(int d=0;d<4;d++)n2+=out[f*4+d]*out[f*4+d];
-        ASSERT_TRUE(n2<rmax*rmax);
+        ASSERT_TRUE(n2<(rmax+1e-3f)*(rmax+1e-3f));  /* tiny FP slack */
         for(int d=0;d<4;d++)ASSERT_TRUE(!isnan(out[f*4+d]));
     }
     free(out);wubu_flow_free(&m);

@@ -328,7 +328,15 @@ float wubu_flow_train_step(WubuFlowMatching* model,
         /* Restore and apply gradient */
         net->w_out[wi] += eps; /* back to original */
         float grad = (loss_plus - loss_minus) / (2.0f * eps);
-        net->w_out[wi] -= lr * grad;
+        float new_w = net->w_out[wi] - lr * grad;
+        /* GAP-C005 companion: bound weights so the velocity net cannot
+         * blow up under long finite-difference training */
+        if(!(new_w==new_w)) new_w=net->w_out[wi];                       /* NaN guard: keep old */
+        if(new_w> 10.0f) new_w= 10.0f;
+        if(new_w<-10.0f) new_w=-10.0f;
+        net->w_out[wi]=new_w;
+        if(net->w_out[wi]> 10.0f) net->w_out[wi]= 10.0f;
+        if(net->w_out[wi]<-10.0f) net->w_out[wi]=-10.0f;
     }
 
     model->step_count++;
