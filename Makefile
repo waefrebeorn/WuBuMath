@@ -240,6 +240,10 @@ $(BIN)/test_pm: $(SRC)/tests/test_wubu_prodman.c $(SRC)/math/wubu_prodman.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_prodman.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_rd: $(SRC)/tests/test_wubu_rdomode.c $(SRC)/train/wubu_rdomode.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_rdomode.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_slerp: $(SRC)/tests/test_wubu_slerp_path.c $(SRC)/math/wubu_slerp_path.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_slerp_path.c $< -o $@ $(LDFLAGS)
@@ -464,6 +468,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Euclidean Parametrization ===" && $(BIN)/test_ep
 	@echo "=== Hyperbolic Conv (Poincaré MLP) ===" && $(BIN)/test_hconv
 	@echo "=== Quaternion SLERP Path ===" && $(BIN)/test_slerp
+	@echo "=== RD Mode Decision ===" && $(BIN)/test_rd
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
 	@echo "=== Hierarchical Classification ===" && $(BIN)/test_hier
