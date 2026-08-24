@@ -240,6 +240,10 @@ $(BIN)/test_pm: $(SRC)/tests/test_wubu_prodman.c $(SRC)/math/wubu_prodman.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_prodman.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hlr: $(SRC)/tests/test_wubu_hlogreg.c $(SRC)/train/wubu_hlogreg.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_hlogreg.c $< -o $@ $(LDFLAGS)
@@ -529,6 +533,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic Krum Outliers ===" && $(BIN)/test_hkrum
 	@echo "=== Hyperbolic MDS ===" && $(BIN)/test_hmds
 	@echo "=== Hyperbolic Logistic Regression ===" && $(BIN)/test_hlr
+	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
 	@echo "=== Hierarchical Classification ===" && $(BIN)/test_hier
