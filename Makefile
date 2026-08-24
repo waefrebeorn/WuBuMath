@@ -240,6 +240,10 @@ $(BIN)/test_pm: $(SRC)/tests/test_wubu_prodman.c $(SRC)/math/wubu_prodman.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_prodman.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_ep: $(SRC)/tests/test_wubu_euclidparam.c $(SRC)/math/wubu_euclidparam.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_euclidparam.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hgnn: $(SRC)/tests/test_wubu_hgnn.c $(SRC)/math/wubu_hgnn.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hgnn.c $< -o $@ $(LDFLAGS)
@@ -449,6 +453,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic VAE Sampling ===" && $(BIN)/test_hvae
 	@echo "=== Sarkar Tree Embedding ===" && $(BIN)/test_tree
 	@echo "=== Hyperbolic GCN Layer ===" && $(BIN)/test_hgnn
+	@echo "=== Euclidean Parametrization ===" && $(BIN)/test_ep
 	@echo "=== Product Manifold ===" && $(BIN)/test_pm
 	@echo "=== Geodesic Path ===" && $(BIN)/test_gpath
 	@echo "=== Hierarchical Classification ===" && $(BIN)/test_hier
