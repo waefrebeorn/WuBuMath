@@ -216,6 +216,10 @@ $(BIN)/test_pa: $(SRC)/tests/test_wubu_psychoacoustic.c $(SRC)/audio/wubu_psycho
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/audio/wubu_psychoacoustic.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_hgnn: $(SRC)/tests/test_wubu_hgnn.c $(SRC)/math/wubu_hgnn.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hgnn.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_tree: $(SRC)/tests/test_wubu_tree_embed.c $(SRC)/math/wubu_tree_embed.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_tree_embed.c $< -o $@ $(LDFLAGS)
@@ -420,6 +424,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Riemannian SGD ===" && $(BIN)/test_rsgd
 	@echo "=== Hyperbolic VAE Sampling ===" && $(BIN)/test_hvae
 	@echo "=== Sarkar Tree Embedding ===" && $(BIN)/test_tree
+	@echo "=== Hyperbolic GCN Layer ===" && $(BIN)/test_hgnn
 	@echo "=== Psychoacoustic Masking ===" && $(BIN)/test_pa
 	@echo "=== Pair Retrieval (D006/D010) ===" && $(BIN)/test_pairs
 	@echo "=== Kodak Audio-Image Tests ===" && $(BIN)/test_kodak
