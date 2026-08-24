@@ -216,6 +216,10 @@ $(BIN)/test_pa: $(SRC)/tests/test_wubu_psychoacoustic.c $(SRC)/audio/wubu_psycho
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/audio/wubu_psychoacoustic.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_hknn: $(SRC)/tests/test_wubu_hknn.c $(SRC)/math/wubu_hknn.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hknn.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hope: $(SRC)/tests/test_wubu_hope.c $(SRC)/math/wubu_hope.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hope.c $< -o $@ $(LDFLAGS)
@@ -400,6 +404,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperboloid Linear Layer ===" && $(BIN)/test_hlin
 	@echo "=== Hyperbolic Activation ===" && $(BIN)/test_hact
 	@echo "=== HoPE Positional Encoding ===" && $(BIN)/test_hope
+	@echo "=== Hyperbolic k-NN ===" && $(BIN)/test_hknn
 	@echo "=== Psychoacoustic Masking ===" && $(BIN)/test_pa
 	@echo "=== Pair Retrieval (D006/D010) ===" && $(BIN)/test_pairs
 	@echo "=== Kodak Audio-Image Tests ===" && $(BIN)/test_kodak
