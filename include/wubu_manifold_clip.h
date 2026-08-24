@@ -22,14 +22,19 @@ typedef struct {
     int embed_dim;   /* ball dimension D */
     int feat_dim;    /* input feature length F */
     float lr;        /* head learning rate */
+    float entail_weight;  /* GAP-D013: lambda on entailment loss (MERU: 0.2) */
 } WubuMclipConfig;
 
 typedef struct {
     WubuMclipConfig cfg;
     float* proj_a;      /* [D,F] modality-A head (image)  */
     float* proj_b;      /* [D,F] modality-B head (text/audio) */
-    float log_tau;      /* learnable temperature, tau = exp(log_tau) */
-    float log_c;        /* GAP-D009: learnable curvature, c = exp(log_c) */
+    float log_tau;      /* learnable temperature, tau = exp(log_tau), floor 0.01 */
+    float log_c;        /* GAP-D009: learnable curvature, c = exp(log_c),
+                           clamped [0.1,10] per MERU stability recipe */
+    float log_alpha_a;  /* GAP-D013: per-modality scale scalars (log space,
+                           MERU alpha_img/alpha_txt, init 1/sqrt(F)) */
+    float log_alpha_b;
     int step_count;
     bool initialized;
 } WubuManifoldClip;

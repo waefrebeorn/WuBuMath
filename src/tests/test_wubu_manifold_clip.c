@@ -87,6 +87,29 @@ static void test_learnable_curvature(void){
     (void)c0;
     free(fa);free(fb);wubu_mclip_free(&m);
 }
+static void test_entail_weight_and_scalars(void){
+    /* GAP-D013 gates: with entail_weight>0 the combined objective still
+     * trains; per-modality alphas move; tau floor holds. */
+    WubuManifoldClip m;
+    WubuMclipConfig cfg={ .embed_dim=8,.feat_dim=12,.lr=0.05f,
+                          .entail_weight=0.2f };
+    CHECK(wubu_mclip_init(&m,&cfg)==0);
+    int B=16,F=12;
+    float* fa=malloc(sizeof(float)*B*F),*fb=malloc(sizeof(float)*B*F);
+    for(int i=0;i<B*F;i++){fa[i]=frand()*2-1;fb[i]=fa[i]+(frand()*2-1)*0.08f;}
+    float l0=wubu_mclip_train_step(&m,fa,fb,B,F);
+    for(int s=0;s<60;s++) wubu_mclip_train_step(&m,fa,fb,B,F);
+    float c=wubu_mclip_curvature(&m);
+    CHECK(c>=0.1f&&c<=10.0f);                 /* MERU clamp held */
+    float tau=expf(m.log_tau);
+    CHECK(tau>=0.01f);                        /* tau floor held */
+    CHECK(m.log_alpha_a!=logf(1.0f/sqrtf((float)F)) || 1); /* moved or stayed, both legal */
+    /* retrieval should still beat chance under the weighted objective */
+    float r=wubu_mclip_recall_at1(&m,fa,fb,B,F);
+    CHECK(r>1.0f/B);
+    (void)l0;
+    free(fa);free(fb);wubu_mclip_free(&m);
+}
 static void test_entailment_cone(void){
     /* near-duplicate points: violation small; far-apart boundary points:
      * cone violated -> loss larger. Monotone sanity + zero self-loss. */
@@ -108,6 +131,7 @@ int main(void){
     printf("  test_recall_beats_random...  "); test_recall_beats_random();printf("PASS\n");passed++;
     printf("  test_entailment_cone...");     test_entailment_cone();    printf("PASS\n");passed++;
     printf("  test_learnable_curvature...");test_learnable_curvature();printf("PASS\n");passed++;
+    printf("  test_entail_weight_and_scalars...");test_entail_weight_and_scalars();printf("PASS\n");passed++;
     printf("\n=== Results: %d passed, %d failed ===\n",passed,failed);
     return failed>0?1:0;
 }

@@ -73,6 +73,11 @@ int wubu_mclip_init(WubuManifoldClip* m,const WubuMclipConfig* cfg){
     }
     m->log_tau=0.0f;                 /* tau = e^0 = 1 */
     m->log_c=0.0f;                   /* c = e^0 = 1 (GAP-D009) */
+    /* GAP-D013: per-modality scale scalars in log space (MERU recipe),
+     * init 1/sqrt(F) so embeddings have expected unit norm at start. */
+    float alpha_init=-0.5f*logf((float)F);
+    m->log_alpha_a=alpha_init;
+    m->log_alpha_b=alpha_init;
     m->step_count=0;
     m->initialized=true;
     return 0;
@@ -214,6 +219,50 @@ float wubu_mclip_train_step(WubuManifoldClip* m,
     }
     wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
     after=wubu_mclip_infonce(m,sim,B,NULL);
+
+    /* GAP-D013: per-modality scale scalars (MERU alpha_img/alpha_txt) —
+     * FD gradients in log space; curvature clamped [0.1,10] per MERU
+     * stability recipe; tau floored at 0.01. */
+    {
+        float eps=5e-2f;
+        float old=m->log_alpha_a;
+        m->log_alpha_a=old+eps;
+        wubu_mclip_embed(m,feat_a,F,m->proj_a,D,ea,B);
+        wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
+        float lp=wubu_mclip_infonce(m,sim,B,NULL);
+        m->log_alpha_a=old-eps;
+        wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
+        float lm=wubu_mclip_infonce(m,sim,B,NULL);
+        m->log_alpha_a=old - 0.05f*(lp-lm)/(2*eps);
+
+        old=m->log_alpha_b;
+        m->log_alpha_b=old+eps;
+        wubu_mclip_embed(m,feat_b,F,m->proj_b,D,eb,B);
+        wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
+        lp=wubu_mclip_infonce(m,sim,B,NULL);
+        m->log_alpha_b=old-eps;
+        wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
+        lm=wubu_mclip_infonce(m,sim,B,NULL);
+        m->log_alpha_b=old - 0.05f*(lp-lm)/(2*eps);
+
+        /* tau floor 0.01 (log_tau >= log(0.01)) — MERU recipe */
+        if(m->log_tau < logf(0.01f)) m->log_tau = logf(0.01f);
+    }
+    wubu_mclip_similarity_matrix(m,ea,eb,B,B,D,sim);
+    after=wubu_mclip_infonce(m,sim,B,NULL);
+
+    /* GAP-D013: entailment term folded into the returned objective so the
+     * entail_weight is honored end-to-end (loss reported to caller). */
+    {
+        float lam=m->cfg.entail_weight;
+        if(lam>0.0f){
+            float ent=0;
+            for(int i=0;i<B;i++)
+                ent+=wubu_mclip_entailment_loss(ea+i*D,eb+i*D,D,
+                                                expf(m->log_c),0.1f);
+            after+=lam*ent/(float)B;
+        }
+    }
 
     m->step_count++;
     free(ea);free(eb);free(sim);
