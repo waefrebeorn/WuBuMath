@@ -292,6 +292,10 @@ $(BIN)/test_lpos: $(SRC)/tests/test_wubu_learned_pos.c $(SRC)/math/wubu_learned_
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_learned_pos.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_knng: $(SRC)/tests/test_wubu_knngraph.c $(SRC)/math/wubu_knngraph.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_knngraph.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hgat: $(SRC)/tests/test_wubu_hgat.c $(SRC)/math/wubu_hgat.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hgat.c $< -o $@ $(LDFLAGS)
@@ -571,6 +575,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic t-SNE ===" && $(BIN)/test_htsne
 	@echo "=== Hyperbolic GCN Stack ===" && $(BIN)/test_hstack
 	@echo "=== Hyperbolic GAT ===" && $(BIN)/test_hgat
+	@echo "=== k-NN Graph ===" && $(BIN)/test_knng
 	@echo "=== Learned Positional Embedding ===" && $(BIN)/test_lpos
 	@echo "=== Causal Mask ===" && $(BIN)/test_causal
 	@echo "=== KV Cache ===" && $(BIN)/test_kvc
