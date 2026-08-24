@@ -95,9 +95,9 @@ static void test_learnable_curvature_fm(void){
     float pool[8]={-0.5f,0.2f,-0.1f,0.05f,  0.5f,-0.3f,0.1f,-0.05f};
     for(int s=0;s<300;s++) wubu_flow_train_step(&m,pool,2,4);
     float c1=m.c;
-    /* geometry may legitimately oscillate around c0 under noisy FD;
-     * the hard invariants are: parameter stayed SANE and finite, and
-     * rollouts remain on-ball under the learned geometry. */
+    /* with a deterministic probe time the geometry gradient is
+     * deterministic too — curvature MUST move */
+    ASSERT_TRUE(fabsf(c1-c0)>1e-5f);
     ASSERT_TRUE(c1>0.1f&&c1<10.0f);
     ASSERT_TRUE(!isnan(c1)&&!isinf(c1));
     /* on-ball after a rollout under learned geometry */

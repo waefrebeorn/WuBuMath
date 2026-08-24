@@ -342,11 +342,11 @@ float wubu_flow_train_step(WubuFlowMatching* model,
         float old = model->log_c;
         /* deterministic probe time: kills RNG noise in the geometry
          * gradient so curvature drift reflects the data, not sampling */
-        float probe_t = t;
+        float probe_t = 0.5f;   /* fixed mid-path: deterministic geometry gradient */
         model->c = expf(old + eps);
-        float lp = wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
+        float lp = wubu_flow_compute_loss(model, x_0, x_1, N, D, probe_t);
         model->c = expf(old - eps);
-        float lm = wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
+        float lm = wubu_flow_compute_loss(model, x_0, x_1, N, D, probe_t);
         (void)probe_t;
         float step_lc = old - geo_lr * (lp - lm) / (2*eps);
         /* NaN guard + keep geometry in a numerically sane band */
