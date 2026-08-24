@@ -345,6 +345,9 @@ float wubu_flow_train_step(WubuFlowMatching* model,
         model->c = expf(old - eps);
         float lm = wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
         model->log_c = old - geo_lr * (lp - lm) / (2*eps);
+        /* keep geometry in a numerically sane band */
+        if(model->log_c> 3.0f) model->log_c= 3.0f;    /* c <= ~20 */
+        if(model->log_c<-3.0f) model->log_c=-3.0f;    /* c >= ~0.05 */
         model->c = expf(model->log_c);
         return wubu_flow_compute_loss(model, x_0, x_1, N, D, t);
     }
