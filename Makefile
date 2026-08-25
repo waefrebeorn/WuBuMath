@@ -268,6 +268,10 @@ $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_ae2: $(SRC)/tests/test_wubu_attnentropy.c $(SRC)/math/wubu_attnentropy.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_attnentropy.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_bl: $(SRC)/tests/test_wubu_bellman.c $(SRC)/train/wubu_bellman.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_bellman.c $< -o $@ $(LDFLAGS)
@@ -367,6 +371,7 @@ $(BIN)/test_hnorm: $(SRC)/tests/test_wubu_hnorm.c $(SRC)/math/wubu_hnorm.c
 $(BIN)/test_pflow: $(SRC)/tests/test_wubu_pflow.c $(SRC)/train/wubu_pflow.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_pflow.c $< -o $@ $(LDFLAGS)
+
 
 $(BIN)/test_bl: $(SRC)/tests/test_wubu_bellman.c $(SRC)/train/wubu_bellman.c
 	@mkdir -p $(BIN)
@@ -651,6 +656,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic Replay ===" && $(BIN)/test_rp
 	@echo "=== Hyperbolic PPO ===" && $(BIN)/test_hp
 	@echo "=== Bellman Operator (100th gap) ===" && $(BIN)/test_bl
+	@echo "=== Attention Entropy Monitor ===" && $(BIN)/test_ae2
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
