@@ -264,7 +264,7 @@ $(BIN)/test_g2b: $(SRC)/tests/test_wubu_graph2ball.c $(SRC)/train/wubu_graph2bal
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_graph2ball.c $(SRC)/train/wubu_poincare_emb.c $< -o $@ $(LDFLAGS)
 
-$(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hil $(BIN)/test_st $(BIN)/test_fexp $(BIN)/test_ai2 $(BIN)/test_qr $(BIN)/test_sc $(BIN)/test_bq $(BIN)/test_sp $(BIN)/test_qcodec $(BIN)/test_qi $(BIN)/test_qfinal $(BIN)/test_qz $(BIN)/test_dq $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
+$(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hil $(BIN)/test_st $(BIN)/test_fexp $(BIN)/test_ai2 $(BIN)/test_qr $(BIN)/test_sc $(BIN)/test_bq $(BIN)/test_sp $(BIN)/test_qcodec $(BIN)/test_qi $(BIN)/test_qfinal $(BIN)/test_qz $(BIN)/test_dq $(BIN)/test_scl $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
@@ -747,7 +747,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Attention Frobenius Monitor ===" && $(BIN)/test_af
 	@echo "=== LR Schedule ===" && $(BIN)/test_lr
 	@echo "=== .WUBV Container Format ===" && $(BIN)/test_wubuv
-	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hil $(BIN)/test_st $(BIN)/test_fexp $(BIN)/test_ai2 $(BIN)/test_qr $(BIN)/test_sc $(BIN)/test_bq $(BIN)/test_sp $(BIN)/test_qcodec $(BIN)/test_qi $(BIN)/test_qfinal $(BIN)/test_qz $(BIN)/test_dq $(BIN)/test_hdpc
+	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hil $(BIN)/test_st $(BIN)/test_fexp $(BIN)/test_ai2 $(BIN)/test_qr $(BIN)/test_sc $(BIN)/test_bq $(BIN)/test_sp $(BIN)/test_qcodec $(BIN)/test_qi $(BIN)/test_qfinal $(BIN)/test_qz $(BIN)/test_dq $(BIN)/test_scl $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
 	@echo "=== Hyperbolic Decision Tree ===" && $(BIN)/test_hdt
@@ -853,3 +853,7 @@ $(BIN)/test_qz: src/tests/test_wubu_qc_zlib.c src/train/wubu_qc_zlib.c src/math/
 $(BIN)/test_dq: src/tests/test_wubu_dualquat.c src/math/wubu_dualquat.c
 	@mkdir -p bin
 	$(CC) $(CFLAGS) -Iinclude -DM_PI=3.14159265358979f src/math/wubu_dualquat.c $< -o $@ -lm
+
+$(BIN)/test_scl: src/tests/test_wubu_sclerp.c src/math/wubu_sclerp.c
+	@mkdir -p bin
+	$(CC) $(CFLAGS) -Iinclude -DM_PI=3.14159265358979f src/math/wubu_sclerp.c $< -o $@ -lm
