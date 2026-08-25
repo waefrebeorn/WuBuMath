@@ -268,6 +268,10 @@ $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_ec2: $(SRC)/tests/test_wubu_entail2.c $(SRC)/math/wubu_entail2.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_entail2.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_lclip: $(SRC)/tests/test_wubu_lorentz_clip.c $(SRC)/math/wubu_lorentz_clip.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_lorentz_clip.c $< -o $@ $(LDFLAGS)
@@ -347,6 +351,10 @@ $(BIN)/test_hnorm: $(SRC)/tests/test_wubu_hnorm.c $(SRC)/math/wubu_hnorm.c
 $(BIN)/test_pflow: $(SRC)/tests/test_wubu_pflow.c $(SRC)/train/wubu_pflow.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_pflow.c $< -o $@ $(LDFLAGS)
+
+$(BIN)/test_ec2: $(SRC)/tests/test_wubu_entail2.c $(SRC)/math/wubu_entail2.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_entail2.c $< -o $@ $(LDFLAGS)
 
 $(BIN)/test_lclip: $(SRC)/tests/test_wubu_lorentz_clip.c $(SRC)/math/wubu_lorentz_clip.c
 	@mkdir -p $(BIN)
@@ -606,6 +614,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic Logistic Regression ===" && $(BIN)/test_hlr
 	@echo "=== H×S Product Manifold ===" && $(BIN)/test_hm
 	@echo "=== Lorentz CLIP Similarity ===" && $(BIN)/test_lclip
+	@echo "=== Entailment Cone ===" && $(BIN)/test_ec2
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
