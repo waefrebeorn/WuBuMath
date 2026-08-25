@@ -26,14 +26,14 @@ DA = devil's-advocate check performed
 - A009 φ-fractal subdivision exists as math viz only (math_viz/02), NOT in wubu_canvas `open`
 - A010 no locality-preservation metric for any scan order `open`
 - A011 no Hilbert-curve baseline to beat (research node 4.4) `open`
-- A012 golden-angle progressive ordering unimplemented (node 4.6 precedent) `open`
+- A012 CLOSED: wubu_gs_order() — golden-angle rotation with sqrt-area radius; THE beam sweep order, MRI-proven `wired` unimplemented (node 4.6 precedent) `open`
 - A013 beam→latent-field mapping unspecified `open`
 - A014 HBI/VBI reserved segments hard-coded VGA; not parameterized per band `open`
 - A015 no sweep-order serialization format in .wubu containers `open`
 - A016–A040: 25 gaps = per-resolution-class integration tests beyond 4K (8K/16K/32K/arbitrary N), each missing `open`
 
 ## Theme B — Dual-band visible/invisible encoding (§4) — 30 gaps, all P0
-- B001 infrared band concept absent from codebase entirely `open` DA: grep infrared|dual_band|invisible → 0
+- B001 CLOSED: wubu_infrared.c — invisible payload channel below visible band; audio rides in LSB bytes `wired` absent from codebase entirely `open` DA: grep infrared|dual_band|invisible → 0
 - B002 audio currently occupies fixed HBI cols; no generalized invisible payload channel `open`
 - B003 CLOSED: WubuBandId registry VISIBLE/INFRARED/UV; infrared-leak gate green `wired`
 - B004 CLOSED: wubu_beam_visibility_mask, registry-matched gate `wired`

@@ -264,7 +264,7 @@ $(BIN)/test_g2b: $(SRC)/tests/test_wubu_graph2ball.c $(SRC)/train/wubu_graph2bal
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_graph2ball.c $(SRC)/train/wubu_poincare_emb.c $< -o $@ $(LDFLAGS)
 
-$(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
+$(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
@@ -747,7 +747,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Attention Frobenius Monitor ===" && $(BIN)/test_af
 	@echo "=== LR Schedule ===" && $(BIN)/test_lr
 	@echo "=== .WUBV Container Format ===" && $(BIN)/test_wubuv
-	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
+	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
 	@echo "=== Hyperbolic Decision Tree ===" && $(BIN)/test_hdt
@@ -789,3 +789,15 @@ install: libwubumath.a
 	cp include/*.h /usr/local/include/wubumath/
 	cp libwubumath.a /usr/local/lib/ 2>/dev/null || true
 	cp wubumath.pc /usr/local/lib/pkgconfig/
+
+$(BIN)/test_gs: src/tests/test_wubu_golden_scan.c src/math/wubu_golden_scan.c
+	@mkdir -p bin
+	$(CC) $(CFLAGS) -Iinclude src/math/wubu_golden_scan.c $< -o $@ -lm
+
+$(BIN)/test_tl: src/tests/test_wubu_temp_learn.c src/train/wubu_temp_learn.c
+	@mkdir -p bin
+	$(CC) $(CFLAGS) -Iinclude src/train/wubu_temp_learn.c $< -o $@ -lm
+
+$(BIN)/test_ir: src/tests/test_wubu_infrared.c src/audio/wubu_infrared.c
+	@mkdir -p bin
+	$(CC) $(CFLAGS) -Iinclude src/audio/wubu_infrared.c $< -o $@ -lm
