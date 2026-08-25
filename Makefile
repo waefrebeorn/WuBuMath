@@ -268,6 +268,10 @@ $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_hpq: $(SRC)/tests/test_wubu_hpq.c $(SRC)/audio/wubu_hpq.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/audio/wubu_hpq.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hts2: $(SRC)/tests/test_wubu_htree_softmax.c $(SRC)/math/wubu_htree_softmax.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_htree_softmax.c $< -o $@ $(LDFLAGS)
@@ -712,6 +716,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic Analogy ===" && $(BIN)/test_ha2
 	@echo "=== Hyperbolic Grad Clipping ===" && $(BIN)/test_hc
 	@echo "=== Hyperbolic Hierarchical Softmax ===" && $(BIN)/test_hts2
+	@echo "=== Hyperbolic RVQ ===" && $(BIN)/test_hpq
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
