@@ -268,6 +268,10 @@ $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_sn: $(SRC)/tests/test_wubu_specnorm.c $(SRC)/math/wubu_specnorm.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_specnorm.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_ae2: $(SRC)/tests/test_wubu_attnentropy.c $(SRC)/math/wubu_attnentropy.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_attnentropy.c $< -o $@ $(LDFLAGS)
@@ -657,6 +661,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic PPO ===" && $(BIN)/test_hp
 	@echo "=== Bellman Operator (100th gap) ===" && $(BIN)/test_bl
 	@echo "=== Attention Entropy Monitor ===" && $(BIN)/test_ae2
+	@echo "=== Spectral Normalization ===" && $(BIN)/test_sn
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
