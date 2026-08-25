@@ -268,6 +268,10 @@ $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_kg: $(SRC)/tests/test_wubu_kgtrans.c $(SRC)/train/wubu_kgtrans.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_kgtrans.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_mh: $(SRC)/tests/test_wubu_multihop.c $(SRC)/math/wubu_multihop.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_multihop.c $< -o $@ $(LDFLAGS)
@@ -722,6 +726,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic Hierarchical Softmax ===" && $(BIN)/test_hts2
 	@echo "=== Hyperbolic RVQ ===" && $(BIN)/test_hpq
 	@echo "=== Multi-hop Aggregation ===" && $(BIN)/test_mh
+	@echo "=== Hyperbolic TransE ===" && $(BIN)/test_kg
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
