@@ -268,6 +268,10 @@ $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_hsc: $(SRC)/tests/test_wubu_hsupcon.c $(SRC)/train/wubu_hsupcon.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_hsupcon.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_hbm: $(SRC)/tests/test_wubu_hbeam.c $(SRC)/math/wubu_hbeam.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hbeam.c $< -o $@ $(LDFLAGS)
@@ -677,6 +681,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic MoE ===" && $(BIN)/test_moe
 	@echo "=== Hyperbolic Dropout ===" && $(BIN)/test_hd2
 	@echo "=== Hyperbolic Beam Search ===" && $(BIN)/test_hbm
+	@echo "=== Hyperbolic SupCon ===" && $(BIN)/test_hsc
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
