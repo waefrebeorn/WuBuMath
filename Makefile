@@ -268,6 +268,10 @@ $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_wubuv: $(SRC)/tests/test_wubuv.c $(SRC)/audio/wubuv.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/audio/wubuv.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_lr: $(SRC)/tests/test_wubu_lrsched.c $(SRC)/train/wubu_lrsched.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_lrsched.c $< -o $@ $(LDFLAGS)
@@ -742,6 +746,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Temporal Conv ===" && $(BIN)/test_tcv
 	@echo "=== Attention Frobenius Monitor ===" && $(BIN)/test_af
 	@echo "=== LR Schedule ===" && $(BIN)/test_lr
+	@echo "=== .WUBV Container Format ===" && $(BIN)/test_wubuv
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
