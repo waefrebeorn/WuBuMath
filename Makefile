@@ -268,6 +268,10 @@ $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_af: $(SRC)/tests/test_wubu_attnfrobenius.c $(SRC)/math/wubu_attnfrobenius.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_attnfrobenius.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_tcv: $(SRC)/tests/test_wubu_tconv.c $(SRC)/audio/wubu_tconv.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/audio/wubu_tconv.c $< -o $@ $(LDFLAGS)
@@ -732,6 +736,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Multi-hop Aggregation ===" && $(BIN)/test_mh
 	@echo "=== Hyperbolic TransE ===" && $(BIN)/test_kg
 	@echo "=== Temporal Conv ===" && $(BIN)/test_tcv
+	@echo "=== Attention Frobenius Monitor ===" && $(BIN)/test_af
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
