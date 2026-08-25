@@ -268,6 +268,10 @@ $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
+$(BIN)/test_ha2: $(SRC)/tests/test_wubu_hanalogy.c $(SRC)/train/wubu_hanalogy.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_hanalogy.c $< -o $@ $(LDFLAGS)
+
 $(BIN)/test_sil: $(SRC)/tests/test_wubu_silhouette.c $(SRC)/math/wubu_silhouette.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_silhouette.c $< -o $@ $(LDFLAGS)
@@ -697,6 +701,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Hyperbolic UMAP ===" && $(BIN)/test_um
 	@echo "=== k-means++ Seeding ===" && $(BIN)/test_kpp
 	@echo "=== Hyperbolic Silhouette ===" && $(BIN)/test_sil
+	@echo "=== Hyperbolic Analogy ===" && $(BIN)/test_ha2
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
