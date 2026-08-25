@@ -20,12 +20,12 @@ DA = devil's-advocate check performed
 - A003 resolution = fixed enum (360p…4K); no arbitrary-N decode `open`
 - A004 no 8K/16K constants or paths (only 2 incidental hits) `open`
 - A005 CLOSED: orientation enum, rotation-free addressing gate `wired`
-- A006 sweep time axis not modeled; canvas has no t coordinate `open`
+- A006 CLOSED: wubu_sweeptime.c — x↔t↔frame coordinate mapping for beam canvas `wired`; canvas has no t coordinate `open`
 - A007 memory bound O(resolution); no O(strip) path `open`
 - A008 no progressive acquisition (decode-before-full-sweep) `open`
 - A009 φ-fractal subdivision exists as math viz only (math_viz/02), NOT in wubu_canvas `open`
 - A010 no locality-preservation metric for any scan order `open`
-- A011 no Hilbert-curve baseline to beat (research node 4.4) `open`
+- A011 CLOSED: wubu_hilbert.c — iterative d2xy (d/=4 fix), locality 0.031 (perfect pixel adjacency), beats golden-angle 1.24. THE compression scan baseline `wired` (research node 4.4) `open`
 - A012 CLOSED: wubu_gs_order() — golden-angle rotation with sqrt-area radius; THE beam sweep order, MRI-proven `wired` unimplemented (node 4.6 precedent) `open`
 - A013 beam→latent-field mapping unspecified `open`
 - A014 HBI/VBI reserved segments hard-coded VGA; not parameterized per band `open`
