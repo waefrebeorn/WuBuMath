@@ -118,7 +118,7 @@ CATEGORIES = [
     {"id":"C18","name":"Quality metrics arsenal","tier":"F",
      "status":"open","exit":"Every benchmark auto-produces a BD-rate plot + VMAF + adversarial checklist; no hand-made claims",
      "implemented":"wubu_ssim.c + wubu_ssim.h + wubu_bench_quality.h. Have: PSNR, SSIM, MS-SSIM, BD-Rate. Gaps: VMAF integration (libvmaf), IWSSIM/FSIM, temporal metrics (flicker, judder), per-content-type calibration curves, automated Triple-DA report generation. C18 now wires online SOTA tracking into dominance loop — web_search queries VVC/VTM/ECM/DCVC/AV2/H.267 papers each iteration.",
-     "measured":"RESEARCH WIRED — web_search operational via hermes_tools. Latest SOTA: ECM 12.0 leads conventional (-44.47% BD-rate vs VTM-20.0 LD on UVG PSNR); DCVC-RT real-time NVC (CVPR 2025, 125fps 1080p on A100, ~21% vs H.266); AV2 targeting ~30% over AV1; H.267/ECM targeting 40% over VVC landing ~2029. Research sub-loop runs each iteration before implementation selection.",
+     "measured":"RESEARCH WIRED — web_search operational via hermes_tools. Latest SOTA (2026-08-26): ECM 12.0/H.267 — 40% bitrate reduction over VVC targeted by 2028-2029 (ECM v13 already >25% RA, up to 40% screen content); JVET 40th meeting: neural networks now expected ingredient, submissions achieve up to 30% bitrate reduction over VVC, Jan 2027 proposal review milestone; DCVC-RT (CVPR 2025) — 1080p real-time on consumer hardware, 21% bitrate saving vs H.266, DCVC-UF ultra-fast variant now available; AV2 — ~30% lower bitrate than AV1, ships end of 2026. Research sub-loop runs each iteration before implementation selection.",
      "notes":"Integrate libvmaf. Add IWSSIM/FSIM. Add temporal flicker/judder metrics. Auto-generate Triple-DA report from benchmark runs. Research sub-loop wired into Phase 1 of dominance harness (wubu_dominance_loop.py): each iteration queries web_search for latest VVC/neural codec SOTA before selecting implementation targets. Top external threats: ECM (conventional), DCVC-RT/DCVC-FM (real-time neural), AV2 (AOM), H.267 (ITU/ISO)."},
     {"id":"C19","name":"Benchmark corpus institutionalization","tier":"F",
      "status":"closed","exit":"Any future claim reproducible by single command; corpus documented in README",
@@ -297,22 +297,28 @@ def main():
                     else:
                         print(f"    → (no results)")
                 except ImportError:
-                    # Standalone mode: use requests to a search API
+                    # Standalone mode: use requests to Bing search
                     import requests
                     try:
                         resp = requests.get(
-                            "https://api.duckduckgo.com",
-                            params={"q": q, "format": "json", "no_html": 1, "skip_disambig": 1},
+                            "https://www.bing.com/search",
+                            params={"q": q, "count": "3"},
+                            headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"},
                             timeout=15
                         )
                         if resp.status_code == 200:
-                            data = resp.json()
-                            abstract = data.get('AbstractText', '')[:200] or '(no abstract)'
-                            heading = data.get('Heading', '')[:100] or '(no heading)'
-                            print(f"    → [{heading}] (DuckDuckGo)")
-                            print(f"      {abstract}")
+                            # Extract result snippets from HTML
+                            import re
+                            results = re.findall(r'<h2[^>]*><a[^>]*href="([^"]+)"[^>]*>(.*?)</a>', resp.text[:50000])
+                            if results:
+                                for url, title in results[:3]:
+                                    title_clean = re.sub(r'<[^>]+>', '', title)[:100]
+                                    print(f"    → [{title_clean}] {url[:80]}")
+                            else:
+                                abstract = re.sub(r'<[^>]+>', '', resp.text[2000:4000])[:200].strip()
+                                print(f"    → (Bing search returned page, snippet: {abstract})")
                         else:
-                            print(f"    → (DDG returned {resp.status_code})")
+                            print(f"    → (Bing returned {resp.status_code})")
                     except Exception as req_err:
                         print(f"    → (standalone research unavailable: {req_err})")
             except Exception as e:
