@@ -108,9 +108,8 @@ float wubu_pq_eotf(uint16_t pq_value){
     return (float)(10000.0*pow(x,4.0));
 }
 
-/* utility functions for wubu_loss.c compatibility */
-typedef struct { float h,s,l; } WubuHSL;
-typedef struct { uint8_t r,g,b; } WubuRGB;
+/* float-based color utilities (types from wubumath.h) */
+#include <wubumath.h>
 
 static float hue_to_rgb(float p,float q,float t){
     if(t<0)t+=1;if(t>1)t-=1;
@@ -121,20 +120,20 @@ static float hue_to_rgb(float p,float q,float t){
 }
 
 WubuHSL wubu_rgb_to_hsl(WubuRGB rgb){
-    float r=rgb.r/255.0f,g=rgb.g/255.0f,b=rgb.b/255.0f;
-    float mx=(r>g&&r>b)?r:(g>b)?g:b;
-    float mn=(r<g&&r<b)?r:(g<b)?g:b;
+    /* rgb values are 0.0-1.0 */
+    float mx=(rgb.r>rgb.g&&rgb.r>rgb.b)?rgb.r:(rgb.g>rgb.b)?rgb.g:rgb.b;
+    float mn=(rgb.r<rgb.g&&rgb.r<rgb.b)?rgb.r:(rgb.g<rgb.b)?rgb.g:rgb.b;
     float l=(mx+mn)/2;
     float s=0,h=0;
     if(mx!=mn){
         float d=mx-mn;
         s=l>0.5f?d/(2-mx-mn):d/(mx+mn);
-        if(mx==r)h=(g-b)/d+(g<b?6:0);
-        else if(mx==g)h=(b-r)/d+2;
-        else h=(r-g)/d+4;
+        if(mx==rgb.r)h=(rgb.g-rgb.b)/d+(rgb.g<rgb.b?6:0);
+        else if(mx==rgb.g)h=(rgb.b-rgb.r)/d+2;
+        else h=(rgb.r-rgb.g)/d+4;
         h/=6;
     }
-    WubuHSL out={h*360,s,l};
+    WubuHSL out={h,s,l};
     return out;
 }
 
@@ -146,7 +145,7 @@ float wubu_circular_l1_loss(float pred,float target){
 }
 
 WubuRGB wubu_hsl_to_rgb(WubuHSL hsl){
-    float h=hsl.h/360.0f,s=hsl.s,l=hsl.l;
+    float h=hsl.h,s=hsl.s,l=hsl.l;
     float r,g,b;
     if(s==0){r=g=b=l;}
     else{
@@ -156,10 +155,10 @@ WubuRGB wubu_hsl_to_rgb(WubuHSL hsl){
         g=hue_to_rgb(p,q,h);
         b=hue_to_rgb(p,q,h-1.0f/3);
     }
-    WubuRGB out={(uint8_t)(r*255),(uint8_t)(g*255),(uint8_t)(b*255)};
+    WubuRGB out={r,g,b};
     return out;
 }
 
-uint8_t wubu_rgb_to_grayscale(WubuRGB rgb){
-    return (uint8_t)(0.299*rgb.r+0.587*rgb.g+0.114*rgb.b);
+float wubu_rgb_to_grayscale(WubuRGB rgb){
+    return 0.299f*rgb.r+0.587f*rgb.g+0.114f*rgb.b;
 }
