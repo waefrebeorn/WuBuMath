@@ -1,145 +1,342 @@
-/* wubu_encoder.c -- C15 keystone: unified RDO encoder loop
+/* wubu_encoder.c — C15 keystone: unified RDO encoder loop
+ *
+ * Wires together all gated C15 components into a single-pass encoder.
+ *
+ * Architecture (per 8×8 block, in coding order):
+ *  1. If I-frame: try 4 intra modes (DC/Vert/Horiz/Plane), pick best SAD.
+ *     Reconstruct = prediction + DCT(recon - pred)/quantize/dequantize.
+ *  2. If P-frame: get inter prediction (from ref frame or motion), compute
+ *     residual = orig - pred, transform+quantize, reconstruct = pred + residual.
+ *  3. If B-frame: bi-pred from past+future refs, same residual path.
+ *  4. RD cost = SSE + λ·bits for the chosen mode.
+ *  5. Write reconstructed pixels to output buffer.
+ *
+ * Operates on luminance plane only (Y, 1 byte/pixel) — standard video codec
+ * approach. Intra prediction adapted to single-plane neighbors.
+ */
 
-Wires together all gated C15 components into a single-pass encoder:
-
-  For each block (8×8):
-  1. Predict  — inter (motion-compensated) or intra (DC/Vert/Horiz/Plane)
-  2. Residual — original - prediction
-  3. Transform — DCT forward
-  4. Quantize  — with quality matrix
-  5. Estimate bits — for RD cost
-  6. Reconstruct — inverse DCT + add to prediction
-  7. Accumulate bits
-
-  Output: reconstructed frame + total bits used.
-*/
 #include "wubu_encoder.h"
 #include "wubu_rdo.h"
+#include "wubu_rdomode.h"
+#include "wubu_fastmode.h"
 #include "wubu_intra.h"
 #include "wubu_transform.h"
+#include "wubu_bframe2.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#define BS 8
+#ifndef M_PI
+#define M_PI 3.14159265358979f
+#endif
 
-static int est_block_bits(const int16_t* coeffs){
-    return wubu_rd_estimate_bits(coeffs,BS*BS);
+#define BS 8  /* block size */
+
+/* ===== Local intra prediction (single-plane, Y-only) ===== */
+
+static int has_left_y(const uint8_t* img,int W,int H,int bx,int by){
+    return bx>0;
+}
+static int has_top_y(const uint8_t* img,int W,int H,int bx,int by){
+    return by>0;
 }
 
+/* DC: average of available border pixels */
+static void ip_dc_y(const uint8_t* img,int W,int H,int bx,int by,uint8_t* blk){
+    int sum=0,cnt=0;
+    if(bx>0) for(int r=0;r<BS;r++){int y=by*BS+r; if(y<H){sum+=img[y*W+bx-1];cnt++;}}
+    if(by>0) for(int c=0;c<BS;c++){int x=bx*BS+c; if(x<W){sum+=img[(by-1)*BS*8+c];cnt++;}}
+    uint8_t dc=cnt>0?(uint8_t)(sum/cnt):128;
+    for(int i=0;i<64;i++)blk[i]=dc;
+}
+
+/* Vertical: replicate top row downward */
+static void ip_vert_y(const uint8_t* img,int W,int H,int bx,int by,uint8_t* blk){
+    if(by==0){ip_dc_y(img,W,H,bx,by,blk);return;}
+    for(int c=0;c<BS;c++){int x=bx*BS+c; if(x>=W)break;
+        uint8_t v=img[(by-1)*BS*8+c];
+        for(int r=0;r<BS;r++)blk[r*BS+c]=v;
+    }
+}
+
+/* Horizontal: replicate left column rightward */
+static void ip_horiz_y(const uint8_t* img,int W,int H,int bx,int by,uint8_t* blk){
+    if(bx==0){ip_dc_y(img,W,H,bx,by,blk);return;}
+    for(int r=0;r<BS;r++){int y=by*BS+r; if(y>=H)break;
+        uint8_t v=img[y*W+bx-1];
+        for(int c=0;c<BS;c++)blk[r*BS+c]=v;
+    }
+}
+
+/* Plane: weighted extrapolation from top-left corner */
+static void ip_plane_y(const uint8_t* img,int W,int H,int bx,int by,uint8_t* blk){
+    if(bx==0||by==0){ip_vert_y(img,W,H,bx,by,blk);return;}
+    uint8_t corner=img[(by-1)*BS*8+bx-1];
+    int gh=0,gv=0,n=0;
+    for(int c=0;c<BS&&bx-1+c<W;c++){gh+=img[(by-1)*BS*8+bx-1+c]-corner;n++;}
+    for(int r=0;r<BS&&by-1+r<H;r++){gv+=img[(by-1+r)*BS*8+bx-1]-corner;n++;}
+    if(n>0){gh/=n;gv/=n;}
+    for(int r=0;r<BS;r++)for(int c=0;c<BS;c++){
+        int v=corner+gh*(c+1)/BS+gv*(r+1)/BS;
+        blk[r*BS+c]=(uint8_t)(v<0?0:(v>255?255:v));
+    }
+}
+
+/* Predict a single 8×8 block with intra mode (0=DC,1=Vert,2=Horiz,3=Plane) */
+static void intra_predict_y(const uint8_t* img,int W,int H,int bx,int by,
+                             int mode,uint8_t* blk){
+    switch(mode){
+        case 0: ip_dc_y(img,W,H,bx,by,blk);break;
+        case 1: ip_vert_y(img,W,H,bx,by,blk);break;
+        case 2: ip_horiz_y(img,W,H,bx,by,blk);break;
+        case 3: ip_plane_y(img,W,H,bx,by,blk);break;
+        default: ip_dc_y(img,W,H,bx,by,blk);
+    }
+}
+
+/* Best intra mode by SAD against original block */
+static int best_intra_mode(const uint8_t* img,const uint8_t* orig,
+                            int W,int H,int bx,int by){
+    uint8_t pred[64];
+    int best=0; long best_sad=1LL<<40;
+    for(int m=0;m<4;m++){
+        intra_predict_y(img,W,H,bx,by,m,pred);
+        long sad=0;
+        for(int i=0;i<64;i++) sad+=abs((int)orig[i]-(int)pred[i]);
+        if(sad<best_sad){best_sad=sad;best=m;}
+    }
+    return best;
+}
+
+/* ===== Inter prediction ===== */
+
+/* For P-frame: get prediction from reference frame at block position */
+static void inter_pred_plane(const uint8_t* ref,int W,int H,
+                              int bx,int by,uint8_t* pred){
+    int rx=bx*BS, ry=by*BS;
+    for(int r=0;r<BS;r++){
+        for(int c=0;c<BS;c++){
+            int srcY=ry+r, srcX=rx+c;
+            pred[r*BS+c]=(srcY<H&&srcX<W)?ref[srcY*W+srcX]:0;
+        }
+    }
+}
+
+/* Motion-compensated prediction with half-pel refinement */
+static void mc_pred(const uint8_t* ref,int W,int H,
+                     int mvx,int mvy,int bx,int by,uint8_t* pred){
+    /* Simple half-pel MC: bilinear interpolation */
+    float fx=bx*BS+mvx, fy=by*BS+mvy;
+    int x0=(int)floorf(fx), y0=(int)floorf(fy);
+    float dx=fx-x0, dy=fy-y0;
+    for(int r=0;r<BS;r++){
+        for(int c=0;c<BS;c++){
+            int sy=y0+r, sx=x0+c;
+            if(sy<0||sy>=H||sx<0||sx>=W){pred[r*BS+c]=0;continue;}
+            float v00=ref[sy*W+sx];
+            float v10=sx+1<W?ref[sy*W+sx+1]:v00;
+            float v01=sy+1<H?ref[(sy+1)*W+sx]:v00;
+            float v11=sx+1<W&&sy+1<H?ref[(sy+1)*W+sx+1]:v00;
+            float v=v00*(1-dx)*(1-dy)+v10*dx*(1-dy)+v01*(1-dx)*dy+v11*dx*dy;
+            pred[r*BS+c]=(uint8_t)(v<0?0:(v>255?255:(int)(v+0.5)));
+        }
+    }
+}
+
+/* ===== Bit cost estimation ===== */
+
+static int est_block_bits(const int16_t* quant){
+    int bits=0;
+    for(int i=0;i<64;i++){
+        if(quant[i]!=0){
+            int level=abs(quant[i]);
+            bits+=(int)(2*log2f(level+1))+3;
+        }
+    }
+    return bits+4; /* ~4 byte flush overhead */
+}
+
+/* ===== Main encoder ===== */
+
 int wubu_encode_frame(const uint8_t* orig,
-                       const uint8_t* ref_past,
-                       const uint8_t* ref_future,
-                       int W,int H,int qp,
-                       wubu_frame_type_t frame_type,
-                       const int16_t* mv_grid,
-                       uint8_t* recon,
-                       long* total_bits){
-    if(!orig||!recon||((frame_type!=WUBU_I_FRAME)&&!ref_past))return -1;
+                      const uint8_t* ref_past,
+                      const uint8_t* ref_future,
+                      int W,int H,int qp,
+                      wubu_frame_type_t frame_type,
+                      const int16_t* mv_grid,
+                      uint8_t* recon_out,
+                      long* total_bits){
+    if(!orig||!recon_out||!total_bits) return -1;
+    if(W<=0||H<=0) return -1;
+
+    memset(recon_out,0,(size_t)W*H);
     *total_bits=0;
-    int nbx=(W+BS-1)/BS, nby=(H+BS-1)/BS;
-    int bi=0;
+    double lambda=wubu_lambda_from_qp(qp,frame_type);
 
-    for(int by=0;by<nby;by++){
-        for(int bx=0;bx<nbx;bx++){
-            int x0=bx*BS, y0=by*BS;
-            int x1=x0+BS, y1=y0+BS;
-            if(x1>W)x1=W; if(y1>H)y1=H;
-            int pw=x1-x0, ph=y1-y0;
-            int npw=pw*ph;
+    /* encode in 8×8 blocks */
+    for(int by=0;by<H;by+=BS){
+        for(int bx=0;bx<W;bx+=BS){
+            int npw=BS, nph=BS;
+            if(bx+BS>W) npw=W-bx;
+            if(by+BS>H) nph=H-by;
+            if(npw<=0||nph<=0) continue;
 
-            /* prediction buffer */
-            uint8_t pred[BS*BS]={0};
-
+            /* ---- I-frame: intra prediction + DCT residual ---- */
             if(frame_type==WUBU_I_FRAME){
-                /* ---- intra prediction ---- */
-                /* extract actual block for mode decision */
-                uint8_t actual[BS*BS];
-                for(int i=0;i<npw;i++){
-                    int ry=y0+i/pw, rx=x0+i%pw;
-                    if(ry<H&&rx<W)actual[i]=orig[ry*W+rx];
+                /* extract actual block from original */
+                uint8_t org_blk[64]={0};
+                for(int r=0;r<nph;r++)
+                    for(int c=0;c<npw;c++)
+                        org_blk[r*BS+c]=orig[(by+r)*W+(bx+c)];
+
+                /* best intra mode */
+                int mode=best_intra_mode(recon_out,org_blk,W,H,bx,by);
+                uint8_t pred[64]={0};
+                intra_predict_y(recon_out,W,H,bx,by,mode,pred);
+
+                /* residual */
+                int16_t res[64]={0};
+                for(int i=0;i<npw*nph;i++)
+                    res[i]=(int16_t)((int)org_blk[i]-(int)pred[i]);
+
+                /* transform + quantize */
+                int16_t coeffs[64]={0};
+                wubu_tr_forward(res,coeffs,BS);
+                const uint8_t* qmat=wubu_tr_get_qmat(BS,1);
+                int16_t quant[64];
+                wubu_tr_quantize_m(coeffs,qmat,quant,BS,qp);
+
+                /* bits */
+                int bits=est_block_bits(quant);
+                *total_bits+=bits;
+
+                /* reconstruct: dequantize + inverse DCT + add pred */
+                int16_t dq[64], recon_blk[64];
+                wubu_tr_dequantize_m(quant,qmat,dq,BS,qp);
+                wubu_tr_inverse(dq,recon_blk,BS);
+                for(int i=0;i<npw*nph;i++){
+                    int val=recon_blk[i]+pred[i];
+                    if(val<0)val=0; if(val>255)val=255;
+                    recon_out[(by+W)*0+(bx+i)]=(uint8_t)val;
                 }
-                /* best intra mode by SAD */
-                int mode=wubu_ip_best_mode(orig,actual,W,H,x0/BS,y0/BS);
-                uint8_t blk_pred[BS*BS];
-                wubu_ip_predict((uint8_t*)orig,W,H,x0/BS,y0/BS,mode,blk_pred);
-                memcpy(pred,blk_pred,npw);
-            }else{
-                /* ---- inter prediction ---- */
-                if(mv_grid){
-                    int mvx=mv_grid[bi*2], mvy=mv_grid[bi*2+1];
-                    const uint8_t* ref=(frame_type==WUBU_B_FRAME&&ref_future)?
-                                        ref_future:ref_past;
-                    if(ref){
-                        for(int r=0;r<ph;r++)
-                            for(int c=0;c<pw;c++){
-                                int sx=x0+c-mvx, sy=y0+r-mvy;
-                                if(sx<0)sx=0; if(sx>=W)sx=W-1;
-                                if(sy<0)sy=0; if(sy>=H)sy=H-1;
-                                pred[r*pw+c]=ref[sy*W+sx];
-                            }
-                    }
-                }else if(ref_past){
-                    for(int r=0;r<ph;r++)
-                        for(int c=0;c<pw;c++){
-                            int sx=x0+c, sy=y0+r;
-                            if(sx<W&&sy<H)pred[r*pw+c]=ref_past[sy*W+sx];
-                        }
-                }
+                continue;
             }
 
-            /* residual */
-            int16_t res[BS*BS]={0};
-            for(int i=0;i<npw;i++){
-                int ry=y0+i/pw, rx=x0+i%pw;
-                if(ry<H&&rx<W)
-                    res[i]=(int16_t)((int)orig[ry*W+rx]-(int)pred[i]);
+            /* ---- P/B-frame: inter prediction + residual ---- */
+            uint8_t pred[64]={0};
+
+            if(frame_type==WUBU_B_FRAME&&ref_past&&ref_future){
+                /* bi-pred: average past + future */
+                uint8_t p_past[64]={0}, p_future[64]={0};
+                inter_pred_plane(ref_past,W,H,bx,by,p_past);
+                inter_pred_plane(ref_future,W,H,bx,by,p_future);
+                for(int i=0;i<npw*nph;i++)
+                    pred[i]=(uint8_t)((p_past[i]+p_future[i]+1)>>1);
+            }else if(ref_past){
+                /* P-frame: MC from past ref with MV */
+                int mvx=0,mvy=0;
+                if(mv_grid){
+                    int idx=by/BS*(W/BS)+bx/BS;
+                    if(idx>=0&&idx<(W/BS)*(H/BS)){
+                        mvx=mv_grid[idx*2];
+                        mvy=mv_grid[idx*2+1];
+                    }
+                }
+                mc_pred(ref_past,W,H,mvx,mvy,bx,by,pred);
+            }else{
+                /* fallback: no reference */
+                inter_pred_plane(NULL,W,H,bx,by,pred);
             }
+
+            /* extract actual block from original */
+            uint8_t org_blk[64]={0};
+            for(int r=0;r<nph;r++)
+                for(int c=0;c<npw;c++)
+                    org_blk[r*BS+c]=orig[(by+r)*W+(bx+c)];
+
+            /* residual = orig - pred */
+            int16_t res[64]={0};
+            for(int i=0;i<npw*nph;i++)
+                res[i]=(int16_t)((int)org_blk[i]-(int)pred[i]);
 
             /* transform + quantize */
-            int16_t coeffs[BS*BS];
+            int16_t coeffs[64]={0};
             wubu_tr_forward(res,coeffs,BS);
-            const uint8_t* qmat=wubu_tr_get_qmat(BS,frame_type==WUBU_I_FRAME);
-            int16_t quant[BS*BS];
+            const uint8_t* qmat=wubu_tr_get_qmat(BS,0);
+            int16_t quant[64];
             wubu_tr_quantize_m(coeffs,qmat,quant,BS,qp);
 
             /* bits estimate */
-            *total_bits+=est_block_bits(quant);
+            int bits=est_block_bits(quant);
 
-            /* reconstruct: dequantize + inverse DCT + add pred */
-            int16_t dq[BS*BS], recon_blk[BS*BS];
+            /* reconstruct residual path: dequantize + inverse DCT */
+            int16_t dq[64], recon_res[64];
             wubu_tr_dequantize_m(quant,qmat,dq,BS,qp);
-            wubu_tr_inverse(dq,recon_blk,BS);
-            for(int i=0;i<npw;i++){
-                int ry=y0+i/pw, rx=x0+i%pw;
-                if(ry<H&&rx<W){
-                    int val=recon_blk[i]+pred[i];
-                    if(val<0)val=0; if(val>255)val=255;
-                    recon[ry*W+rx]=(uint8_t)val;
-                }
+            wubu_tr_inverse(dq,recon_res,BS);
+
+            /* compute SSE for both paths */
+            /* SKIP: SSE(orig, pred) */
+            long sse_skip=0;
+            for(int i=0;i<npw*nph;i++){
+                int d=org_blk[i]-pred[i];
+                sse_skip+=d*d;
             }
-            bi++;
+            double rd_skip=(double)sse_skip+lambda*1; /* ~1 bit flag */
+
+            /* RESIDUAL: SSE(orig, pred + recon_res) */
+            long sse_res=0;
+            for(int i=0;i<npw*nph;i++){
+                int val=pred[i]+recon_res[i];
+                if(val<0)val=0; if(val>255)val=255;
+                int d=org_blk[i]-val;
+                sse_res+=d*d;
+            }
+            double rd_res=(double)sse_res+lambda*bits;
+
+            if(rd_skip<rd_res){
+                /* SKIP mode: use prediction directly, no residual */
+                for(int r=0;r<nph;r++)
+                    for(int c=0;c<npw;c++)
+                        recon_out[(by+r)*W+(bx+c)]=pred[r*BS+c];
+            }else{
+                /* RESIDUAL mode: write pred + recon_res */
+                *total_bits+=bits;
+                for(int r=0;r<nph;r++)
+                    for(int c=0;c<npw;c++){
+                        int val=pred[r*BS+c]+recon_res[r*BS+c];
+                        if(val<0)val=0; if(val>255)val=255;
+                        recon_out[(by+r)*W+(bx+c)]=(uint8_t)val;
+                    }
+            }
         }
     }
+
+    /* add CABAC stream overhead: header + end-of-stream */
+    *total_bits+=8; /* rough header + EOS */
+
     return 0;
 }
 
+/* ===== RD curve ===== */
+
 int wubu_rd_curve(const uint8_t* orig,
-                   const uint8_t* ref_past,
-                   const uint8_t* ref_future,
-                   int W,int H,
-                   const int* qp_vals,int n_qp,
-                   wubu_frame_type_t frame_type,
-                   const int16_t* mv_grid,
-                   RdCurvePoint* curve){
-    if(!orig||!curve)return -1;
+                  const uint8_t* ref_past,
+                  const uint8_t* ref_future,
+                  int W,int H,
+                  const int* qp_vals,int n_qp,
+                  wubu_frame_type_t frame_type,
+                  const int16_t* mv_grid,
+                  RdCurvePoint* curve){
+    if(!orig||!curve) return -1;
     for(int i=0;i<n_qp;i++){
         uint8_t* recon=calloc((size_t)W*H,1);
-        if(!recon)return -1;
+        if(!recon) return -1;
         long bits=0;
         if(wubu_encode_frame(orig,ref_past,ref_future,W,H,
                              qp_vals[i],frame_type,mv_grid,
-                             recon,&bits)!=0){free(recon);return -1;}
+                             recon,&bits)!=0){
+            free(recon); return -1;
+        }
         long mse=0;
         for(long p=0;p<(long)W*H;p++){
             int d=orig[p]-recon[p]; mse+=d*d;
