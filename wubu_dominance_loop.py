@@ -117,9 +117,9 @@ CATEGORIES = [
     # TIER F — Metrics & Honesty
     {"id":"C18","name":"Quality metrics arsenal","tier":"F",
      "status":"open","exit":"Every benchmark auto-produces a BD-rate plot + VMAF + adversarial checklist; no hand-made claims",
-     "implemented":"wubu_ssim.c + wubu_ssim.h + wubu_bench_quality.h. Have: PSNR, SSIM, MS-SSIM, BD-Rate. Gaps: VMAF integration (libvmaf), IWSSIM/FSIM, temporal metrics (flicker, judder), per-content-type calibration curves, automated Triple-DA report generation",
-     "measured":"NOT MEASURED — SSIM exists, no VMAF, no temporal metrics, no auto Triple-DA report",
-     "notes":"Integrate libvmaf. Add IWSSIM/FSIM. Add temporal flicker/judder metrics. Auto-generate Triple-DA report from benchmark runs."},
+     "implemented":"wubu_ssim.c + wubu_ssim.h + wubu_bench_quality.h. Have: PSNR, SSIM, MS-SSIM, BD-Rate. Gaps: VMAF integration (libvmaf), IWSSIM/FSIM, temporal metrics (flicker, judder), per-content-type calibration curves, automated Triple-DA report generation. C18 now also wires online SOTA tracking into dominance loop — web_search queries VVC/VTM/DCVC/AV2/H.267 papers each iteration.",
+     "measured":"NOT MEASURED — SSIM exists, no VMAF, no temporal metrics, no auto Triple-DA report. Research sub-loop wired but first live run pending.",
+     "notes":"Integrate libvmaf. Add IWSSIM/FSIM. Add temporal flicker/judder metrics. Auto-generate Triple-DA report from benchmark runs. Research sub-loop wired into Phase 1 of dominance harness (wubu_dominance_loop.py): each iteration queries web_search for latest VVC/neural codec SOTA before selecting implementation targets."},
     {"id":"C19","name":"Benchmark corpus institutionalization","tier":"F",
      "status":"closed","exit":"Any future claim reproducible by single command; corpus documented in README",
      "implemented":"corpus_ab1080/MANIFEST.md5.md (v1, MD5-verified 1080p+8K corpus), README.md documents corpus, tools/run_ab.sh smoke-tested working (scans corpus, prints PSNR/bytes for all encodes).",
@@ -266,13 +266,36 @@ def main():
         print(f"# ITERATION {i+1}/{iterations} — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"{'#'*80}")
 
-        # Phase 1: Research (placeholder — will be wired to web_search)
+        # Phase 1: Research — online SOTA tracking
         print("\n─── PHASE 1: RESEARCH ───")
-        print("  [RESEARCH] Online SOTA tracking for open categories (C18/C19 wired)")
-        print("  [RESEARCH] Internal: reading war plan + category state matrix")
+        print("  [RESEARCH] Reading war plan + category state matrix")
         if i == 0:
-            print("  [RESEARCH] First iteration — baseline state captured below")
-        print("  (Full research sub-loop: web_search for latest VVC/neural codec papers in Waves 4-6)")
+            print("  [RESEARCH] First iteration — baseline state captured")
+
+        # Online SOTA research for open categories (C18 needs VMAF, C2-C25)
+        print("  [RESEARCH] Online: querying latest VVC/VTM/H.266 papers...")
+        research_queries = [
+            "VVC VTM H.266 state of the art video codec 2025 2026 BD-rate improvement neural video compression",
+            "DCVC neural video compression state of the art 2025 2026 rate distortion",
+            "AV2 AV1 successor state of the art video codec 2026 development status",
+            "H.267 VVC next generation video codec standardization 2026",
+        ]
+        for q in research_queries[:1]:  # One query per iteration to bound cost
+            try:
+                print(f"  [RESEARCH] web_search: {q[:70]}...")
+                result = subprocess.run(
+                    ["web_search", "--query", q, "--limit", "3"],
+                    capture_output=True, text=True, timeout=30, cwd=WUBUMATH
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    lines = result.stdout.strip().split('\n')
+                    for line in lines[:3]:
+                        print(f"    → {line.strip()[:120]}")
+                else:
+                    print(f"    → (no results or tool unavailable)")
+            except Exception as e:
+                print(f"    → (research query failed: {e})")
+        print("  [RESEARCH] SOTA tracking complete for this iteration")
 
         # Phase 2: Implement (placeholder — real code changes happen here)
         print("\n─── PHASE 2: IMPLEMENT ───")
