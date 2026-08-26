@@ -138,11 +138,11 @@ WubuHSL wubu_rgb_to_hsl(WubuRGB rgb){
 }
 
 float wubu_circular_l1_loss(float pred,float target){
-    /* values on [0,1] circle: 0.0 == 1.0 */
-    float diff=pred-target;
-    while(diff>1.0f)diff-=1.0f;
-    while(diff<-1.0f)diff+=1.0f;
-    return fabsf(diff);
+    /* values on [0,1] circle: shortest distance around the ring */
+    float diff=fmodf(pred-target+1.5f,1.0f)-0.5f;
+    if(diff<0)diff=-diff; /* abs */
+    if(diff>0.5f)diff=1.0f-diff;
+    return diff;
 }
 
 WubuRGB wubu_hsl_to_rgb(WubuHSL hsl){
