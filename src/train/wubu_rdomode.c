@@ -18,14 +18,10 @@
 float wubu_rd_geodesic(const float* a,const float* b,int D,float c){
     float ab2=0,a2=0,b2=0;
     for(int d=0;d<D;d++){
-        float df=a[d]-b[d];ab2+=df*df;
-        a2+=a[d]*a[d];b2+=b[d]*b[b==b?d:d];
-    }
-    /* fix accidental self-compare if any */
-    a2=0;b2=0;
-    for(int d=0;d<D;d++){
-        float df=a[d]-b[d];ab2+=df*df;
-        a2+=a[d]*a[d];b2+=b[d]*b[d];
+        float df=a[d]-b[d];
+        ab2+=df*df;
+        a2+=a[d]*a[d];
+        b2+=b[d]*b[d];
     }
     float den=(1.0f-c*a2)*(1.0f-c*b2);
     if(den<1e-9f)den=1e-9f;

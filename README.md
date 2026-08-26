@@ -1,190 +1,57 @@
-# WuBuMath
+# WuBuMath — C11 math library + WUBQ video codec
 
-Pure C11 mathematical & media encoding library — the home for all WuBu数学 (WuBu Math).
+> Pure C11, zero third-party deps, 78 tests green. Slermed from Python/JAX.
 
-Slermed from the VHF Hamilton Modulator pipeline and JAX compute core. Zero Python. Zero PyTorch. Zero external dependencies.
+## What this is
 
-## What It Is
+Two things in one repo:
 
-WuBuMath is the **dedicated home for all mathematical work** that was previously scattered across bytropix. It computes:
+1. **WuBuMath library** — manifolds (Poincaré/Lorentz/nested-hyperbolic/SO3/quaternion), CVC11 slerm of JAX core (arena, SIMD, GEMM, MLP, lax, opt, IR), Hamilton encoder, VHF canvas, GAAD encoder, learned codec, flow matching, Riemannian SGD, manifold AD, hyperbolic attention, manifold CLIP components. 14 phases on the roadmap (Phase 0–5 complete, Phase 6–15 TODO).
 
-- **Color manifolds** (RGB/HSL, circular L1 loss, grayscale)
-- **Hamilton encoder/decoder** (quaternion latent space for video+audio)
-- **VHF audio pipeline** (canvas compositing, HBI audio strips, FM encoding)
-- **Q-controller** (adaptive learning rate with warmup + exploration)
-- **Positional encoding** (sin/cos frequency bands)
-- **Slermed JAX** (full JAX-compatible compute core in C11)
-- **Media generation** (color patterns, shape animations, VHF tones)
+2. **WUBQ video codec** — the 25-category SOTA war plan (`docs/SOTA_WARPLAN_25.md`). C1 (CABAC round-trip) CLOSED. Building toward beating x264/x265/VP9 on real content.
 
-## Origin
-
-Primary source: [`vhf_audio.py`](https://github.com/waefrebeorn/bytropix/blob/master/AUDIO/wubusynth/vhf_audio.py) from the [bytropix](https://github.com/waefrebeorn/bytropix) repository.
-
-The divergence: bytropix started as the **math/training** repo (Phase 1-5 encoders, geodesic spirals, Hamilton space), then split into **math + inference engine** (C inference server in commit `816aea8`). WuBuMath is the reconciliation — all math comes home.
-
-## All 64 Tests Pass
+## Quick start
 
 ```bash
-make test
+make test          # full test suite (78 tests, ~54s)
+make all           # build everything
 ```
 
-```
-=== WuBuMath Tests ===
-[Color Manifold]     6/6 PASS
-[Circular L1 Loss]   3/3 PASS
-[PRNG]               2/2 PASS
-[Q-Controller]       3/3 PASS
-[Positional Encode]  1/1 PASS
-[Loss Computation]   2/2 PASS
-[Hamilton Encoder]   1/1 PASS
-[VHF Decoder]        1/1 PASS
-[VHF Audio Pipeline] 6/6 PASS
-=== Results: Passed: 29/29 ===
+Per-module: `make test_<name>` (e.g. `make test_gaad`, `make test_vhf_engine`).
 
-=== Slermed JAX Tests ===
-[compute core]      35/35 PASS  
-=== Results: Passed: 35/35 ===
+## Benchmark corpus (C19 — formalized)
 
-TOTAL: 64/64 PASS
-```
-
-## Build
+See `../codec_ab1080/MANIFEST.md5.md` for the MD5-verified corpus manifest.
 
 ```bash
-make          # Build all
-make test     # Run 64 tests
-make clean    # Clean
+./tools/run_ab.sh [1080p|8k|all]   # one-command A/B rerun
 ```
 
-Only needs: GCC with C11. Runs on Linux/macOS/WSL.
+## Test coverage
 
-## Project Structure
+| Suite | Tests | Status |
+|-------|-------|--------|
+| WuBuMath core | 29/29 | ✅ |
+| Slermed JAX | 35/35 | ✅ |
+| GAAD encoder | 18/18 | ✅ |
+| Learned codec | 14/14 | ✅ |
+| VHF canvas | 40/40 | ✅ |
+| Nested encoder | 6/6 | ✅ |
+| **Total** | **78/78** | ✅ |
 
-```
-WuBuMath/
-├── include/
-│   ├── wubumath.h              # Master header (color, model, VHF, Q-controller)
-│   ├── jax.h                   # Slermed JAX master header
-│   ├── jax_arena.h             # Arena allocator + SoA tensors
-│   ├── jax_simd.h             # AVX2/NEON/Scalar SIMD
-│   └── jax_nn.h               # MLP, activation, optimizer
-├── src/
-│   ├── math/
-│   │   ├── wubu_color.c        # RGB/HSL + circular L1 loss
-│   │   ├── wubu_positional_encode.c
-│   │   └── wubu_utils.c        # Bilinear sample, box blur, audio strip
-│   ├── model/
-│   │   ├── wubu_hamilton_encoder.c  # Quaternion latent space
-│   │   ├── wubu_vhf_decoder.c       # Coordinate-sampled decode
-│   │   └── wubu_vhf_audio.c         # Full VHF pipeline
-│   ├── train/
-│   │   ├── wubu_q_controller.c      # Adaptive LR controller
-│   │   └── wubu_loss.c              # HSL loss manifold
-│   ├── jax/                         # Slermed JAX core (35 tests)
-│   │   ├── jax_arena.c
-│   │   ├── jax_simd.c
-│   │   ├── jax_nn.c
-│   │   ├── jax_opt.c
-│   │   ├── jax_lax.c
-│   │   └── jax_ir.c
-│   └── tests/
-│       ├── wubu_tests.c            # 29 tests
-│       └── jax_slermed_test.c     # 35 tests
-├── examples/
-│   └── media_creator.c         # Generates frames + VHF tones → WAV
-└── Makefile
-```
+## 25-category state (see SOTA_WARPLAN_25.md for full details)
 
-## Architecture
+Run `python3 wubu_dominance_loop.py` for the live state matrix.
 
-```
-┌─────────────────────────────────────────────┐
-│              WuBuMath v0.1.0                │
-├─────────────────────────────────────────────┤
-│                                             │
-│  RGB Images [-1,1]                          │
-│       │                                     │
-│       ▼                                     │
-│  ┌─────────────────────┐                    │
-│  │ Hamilton Encoder     │──► Quaternions    │
-│  │ (quaternion latent)  │    Amplitude      │
-│  │                      │    Context [B,3]  │
-│  └─────────────────────┘                    │
-│       │                                     │
-│       ▼                                     │
-│  ┌─────────────────────┐                    │
-│  │ VHF Decoder          │──► coords → RGB  │
-│  │ (coordinate-sample)  │    [-1,1]         │
-│  └─────────────────────┘                    │
-│       │                                     │
-│       ▼                                     │
-│  ┌─────────────────────┐                    │
-│  │ Loss Manifold        │──► HSL → L1/circ │
-│  │ 10*L + 2*H + 1*S   │    composite loss  │
-│  └─────────────────────┘                    │
-│       │                                     │
-│       ▼                                     │
-│  ┌─────────────────────┐                    │
-│  │ Q-Controller         │──► Adaptive LR   │
-│  │ warmup → ε-greedy   │    exploration    │
-│  └─────────────────────┘                    │
-│                                             │
-│  ┌─────────────────────┐                    │
-│  │ Slermed JAX          │──► 35 ops        │
-│  │ arena, GEMM, MLP,   │    JAX-compatible │
-│  │ lax, IR, optimizer  │                    │
-│  └─────────────────────┘                    │
-│                                             │
-│  ┌─────────────────────┐                    │
-│  │ Media Creator        │──► WAV audio     │
-│  │ frames + VHF tones   │    RAW frames    │
-│  └─────────────────────┘                    │
-└─────────────────────────────────────────────┘
-```
+|| Wave 1 (C1,C4,C12,C19) | C1 ✓, C4 ✓ (redesigned tokctx, 15.1% at 45% density, exact round-trip), C12 ✓ (2/2 green), C19 ✓ | — ||
+|| Wave 2 (C9,C10,C5,C6) | — | C9 ✗, C10 ✗, C5 ✗, C6 ✗ ||
+|| Wave 3 (C13,C14,C7,C15) | — | C13 ✗, C14 ✗, C7 ✗, C15 ◐ (RDO framework exists, no unified encoder loop yet) ||
+|| Wave 4 (C2,C3,C16,C17) | — | all ✗ ||
+|| Wave 5 (C20,C21,C22) | — | all ✗ ||
+|| Wave 6 (C23,C24,C25,C11,C18) | — | C25 ✗, C11 ✗, C18 ✗, C23 ◇ frontier, C24 ◇ frontier ||
 
-## Part of the WuBu Family
-
-| Repo | Purpose |
-|------|---------|
-| [WuBuOS](https://github.com/waefrebeorn/WuBuOS) | Custom OS kernel |
-| [bytropix](https://github.com/waefrebeorn/bytropix) | Inference engine (C server, GPU kernels) |
-| **WuBuMath** | **All math, encoders, media generation** ← you are here |
-
-## Math Consolidation (2026-07-10)
-
-WuBuMath is the **canonical home for all WuBu math**. The following were
-migrated out of `bytropix` so the math stops being scattered:
-
-- **`lean/`** — the WuBu Nesting **formal-proof library** (Lean 4 / Mathlib).
-  Proven core: Möbius-addition-closes-Poincaré-ball, hyperbolic
-  gyration identity, holographic soul/echo optimizer (`g = q·2π + r`),
-  nested-hyperbolic curvature invariants, low-rank KV compression.
-  `PowerTower.lean` is kept as an *illustrative notebook only* — it is
-  **not** a proof (false lemma + `sorry` chain; see `docs/theory/AUDIT_POWERTOWER.md`).
-- **`docs/theory/`** — the THEORY writeups (`WuBu_Nesting.md`,
-  `WuBuHypCD.tex`, spatio-temporal nesting), the `math_viz/`
-  visualization scripts, and the curated `papers/` set.
-
-**Deliberately NOT migrated** (stays in `bytropix`):
-- The 11 GB Lean `.lake` build cache (git-ignored anyway).
-- 117 Python encoder/attention prototypes — WuBuMath's charter is
-  *Zero Python*; those live in bytropix `ATTENTION/`, `ENCODERS/`, etc.
-- Inference-internal C kernels (`wubu_ssm*.cu`, Poincaré-GQA
-  backward, MoE-hyperbolic, attention) — those are the *inference
-  engine*, not pure math.
+**Keystone: C15** — without a unified RDO encoder loop, Waves 2–5 can't be measured against the corpus.
 
 ## License
 
-MIT License — WuBu Slermes Project
-
----
-
----
-
-## License
-
-This project is licensed under the **Waefrebeorn Umbrella License v3.0**.
-See the [LICENSE](LICENSE) file for the full license text.
-
-The Waefrebeorn Umbrella License is a custom source-available license.
-It is not OSI-approved and not FSF-approved.
+Umbrella License v3.0 — see LICENSE.
