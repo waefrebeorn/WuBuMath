@@ -107,3 +107,31 @@ float wubu_pq_eotf(uint16_t pq_value){
     /* approximate: L ≈ 10000 * x^4 for quick test purposes */
     return (float)(10000.0*pow(x,4.0));
 }
+
+/* missing utility functions referenced by wubu_loss.c */
+typedef struct { float h,s,l; } WubuHSL;
+typedef struct { uint8_t r,g,b; } WubuRGB;
+
+WubuHSL wubu_rgb_to_hsl(WubuRGB rgb){
+    float r=rgb.r/255.0f,g=rgb.g/255.0f,b=rgb.b/255.0f;
+    float mx=(r>g&&r>b)?r:(g>b)?g:b;
+    float mn=(r<g&&r<b)?r:(g<b)?g:b;
+    float l=(mx+mn)/2;
+    float s=0,h=0;
+    if(mx!=mn){
+        float d=mx-mn;
+        s=l>0.5f?d/(2-mx-mn):d/(mx+mn);
+        if(mx==r)h=(g-b)/d+(g<b?6:0);
+        else if(mx==g)h=(b-r)/d+2;
+        else h=(r-g)/d+4;
+        h/=6;
+    }
+    return (WubuHSL){h*360,s,l};
+}
+
+float wubu_circular_l1_loss(float pred,float target){
+    float diff=pred-target;
+    while(diff>M_PI)diff-=2*M_PI;
+    while(diff<-M_PI)diff+=2*M_PI;
+    return fabsf(diff);
+}
