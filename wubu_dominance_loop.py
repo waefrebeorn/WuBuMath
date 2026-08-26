@@ -119,7 +119,7 @@ CATEGORIES = [
      "status":"open","exit":"Every benchmark auto-produces a BD-rate plot + VMAF + adversarial checklist; no hand-made claims",
      "implemented":"wubu_ssim.c + wubu_ssim.h + wubu_bench_quality.h. Have: PSNR, SSIM, MS-SSIM, BD-Rate. Gaps: VMAF integration (libvmaf), IWSSIM/FSIM, temporal metrics (flicker, judder), per-content-type calibration curves, automated Triple-DA report generation. C18 now wires online SOTA tracking into dominance loop — web_search queries VVC/VTM/ECM/DCVC/AV2/H.267 papers each iteration.",
      "measured":"RESEARCH WIRED — web_search operational via hermes_tools. Latest SOTA (2026-08-26): ECM 12.0/H.267 — 40% bitrate reduction over VVC targeted by 2028-2029 (ECM v13 already >25% RA, up to 40% screen content); JVET 40th meeting: neural networks now expected ingredient, submissions achieve up to 30% bitrate reduction over VVC, Jan 2027 proposal review milestone; DCVC-RT (CVPR 2025) — 1080p real-time on consumer hardware, 21% bitrate saving vs H.266, DCVC-UF ultra-fast variant now available; AV2 — ~30% lower bitrate than AV1, ships end of 2026. Research sub-loop runs each iteration before implementation selection.",
-     "notes":"Integrate libvmaf. Add IWSSIM/FSIM. Add temporal flicker/judder metrics. Auto-generate Triple-DA report from benchmark runs. Research sub-loop wired into Phase 1 of dominance harness (wubu_dominance_loop.py): each iteration queries web_search for latest VVC/neural codec SOTA before selecting implementation targets. Top external threats: ECM (conventional), DCVC-RT/DCVC-FM (real-time neural), AV2 (AOM), H.267 (ITU/ISO)."},
+     "notes":"Integrate libvmaf. Add IWSSIM/FSIM. Add temporal flicker/judder metrics. Auto-generate Triple-DA report from benchmark runs. Research sub-loop wired into Phase 1 of dominance harness (wubu_dominance_loop.py): each iteration queries DuckDuckGo API for latest VVC/neural codec SOTA before selecting implementation targets. Top external threats: ECM (conventional), DCVC-RT/DCVC-FM (real-time neural), AV2 (AOM), H.267 (ITU/ISO).",
     {"id":"C19","name":"Benchmark corpus institutionalization","tier":"F",
      "status":"closed","exit":"Any future claim reproducible by single command; corpus documented in README",
      "implemented":"corpus_ab1080/MANIFEST.md5.md (v1, MD5-verified 1080p+8K corpus), README.md documents corpus, tools/run_ab.sh smoke-tested working (scans corpus, prints PSNR/bytes for all encodes).",
@@ -266,7 +266,7 @@ def main():
         print(f"# ITERATION {i+1}/{iterations} — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"{'#'*80}")
 
-        # Phase 1: Research — online SOTA tracking
+        # Phase 1: Research — online SOTA tracking via requests (standalone-safe)
         print("\n─── PHASE 1: RESEARCH ───")
         print("  [RESEARCH] Reading war plan + category state matrix")
         if i == 0:
@@ -280,49 +280,35 @@ def main():
             "AV2 AV1 successor state of the art video codec 2026 development status",
             "H.267 VVC next generation video codec standardization 2026",
         ]
-        for q in research_queries[:1]:  # One query per iteration to bound cost
-            try:
-                print(f"  [RESEARCH] web_search: {q[:70]}...")
-                # Try hermes_tools first (inside Hermes runtime), fall back to requests
+
+        # Always use requests (works standalone and inside Hermes)
+        try:
+            import requests
+            for q in research_queries[:1]:
+                print(f"  [RESEARCH] querying: {q[:70]}...")
                 try:
-                    from hermes_tools import web_search as hs_web_search
-                    result = hs_web_search(q, limit=3)
-                    if result and result.get('data', {}).get('web'):
-                        for item in result['data']['web'][:3]:
-                            title = item.get('title', '')[:100]
-                            url = item.get('url', '')[:80]
-                            desc = item.get('description', '')[:120]
+                    resp = requests.get(
+                        "https://api.duckduckgo.com",
+                        params={"q": q, "format": "json", "no_html": 1, "skip_disambig": 1},
+                        headers={"User-Agent": "Mozilla/5.0"},
+                        timeout=15
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        title = data.get("Heading", "(no title)")[:100]
+                        abstract = data.get("AbstractText", "")[:200]
+                        url = data.get("AbstractURL", "")
+                        if abstract:
                             print(f"    → [{title}] {url}")
-                            print(f"      {desc}")
-                    else:
-                        print(f"    → (no results)")
-                except ImportError:
-                    # Standalone mode: use requests to Bing search
-                    import requests
-                    try:
-                        resp = requests.get(
-                            "https://www.bing.com/search",
-                            params={"q": q, "count": "3"},
-                            headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"},
-                            timeout=15
-                        )
-                        if resp.status_code == 200:
-                            # Extract result snippets from HTML
-                            import re
-                            results = re.findall(r'<h2[^>]*><a[^>]*href="([^"]+)"[^>]*>(.*?)</a>', resp.text[:50000])
-                            if results:
-                                for url, title in results[:3]:
-                                    title_clean = re.sub(r'<[^>]+>', '', title)[:100]
-                                    print(f"    → [{title_clean}] {url[:80]}")
-                            else:
-                                abstract = re.sub(r'<[^>]+>', '', resp.text[2000:4000])[:200].strip()
-                                print(f"    → (Bing search returned page, snippet: {abstract})")
+                            print(f"      {abstract}")
                         else:
-                            print(f"    → (Bing returned {resp.status_code})")
-                    except Exception as req_err:
-                        print(f"    → (standalone research unavailable: {req_err})")
-            except Exception as e:
-                print(f"    → (research query failed: {e})")
+                            print(f"    → [{title}] (no abstract)")
+                    else:
+                        print(f"    → (DDG returned {resp.status_code})")
+                except Exception as e:
+                    print(f"    → (research failed: {e})")
+        except ImportError:
+            print("  [RESEARCH] requests not available — skipping online research")
         print("  [RESEARCH] SOTA tracking complete for this iteration")
 
         # Phase 2: Implement (placeholder — real code changes happen here)
