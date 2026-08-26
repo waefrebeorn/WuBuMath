@@ -22,6 +22,7 @@
 #include "wubu_intra.h"
 #include "wubu_transform.h"
 #include "wubu_bframe2.h"
+#include "wubu_trellis.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -199,26 +200,42 @@ int wubu_encode_frame(const uint8_t* orig,
                 for(int i=0;i<npw*nph;i++)
                     res[i]=(int16_t)((int)org_blk[i]-(int)pred[i]);
 
-                /* transform + quantize */
+                /* transform + quantize (standard rounding) */
                 int16_t coeffs[64]={0};
                 wubu_tr_forward(res,coeffs,BS);
+                double dcoeffs[64];
+                for(int i=0;i<64;i++)dcoeffs[i]=(double)coeffs[i];
                 const uint8_t* qmat=wubu_tr_get_qmat(BS,1);
                 int16_t quant[64];
                 wubu_tr_quantize_m(coeffs,qmat,quant,BS,qp);
 
-                /* bits */
-                int bits=est_block_bits(quant);
-                *total_bits+=bits;
+                /* trellis RDOQ: find optimal levels minimizing SSE+λ·bits */
+                int16_t trellis_levels[64];
+                double trellis_rd=wubu_trellis_quantize(dcoeffs,64,
+                    qmat[0]*(int)(qp/6+4),lambda,trellis_levels);
 
-                /* reconstruct: dequantize + inverse DCT + add pred */
+                /* Use trellis levels for reconstruction (lower SSE at same/near bits) */
                 int16_t dq[64], recon_blk[64];
-                wubu_tr_dequantize_m(quant,qmat,dq,BS,qp);
-                wubu_tr_inverse(dq,recon_blk,BS);
-                for(int i=0;i<npw*nph;i++){
-                    int val=recon_blk[i]+pred[i];
-                    if(val<0)val=0; if(val>255)val=255;
-                    recon_out[(by+W)*0+(bx+i)]=(uint8_t)val;
+                /* dequantize trellis levels: level * qstep (qstep = qmat[0]*(qp/6+4)/16) */
+                int qstep=qmat[0]*(qp/6+4);
+                for(int i=0;i<64;i++){
+                    dq[i]=(int16_t)((trellis_levels[i]*(int)qstep)>>4);
                 }
+                wubu_tr_inverse(dq,recon_blk,BS);
+
+                /* bits estimate from trellis levels */
+                int bits=0;
+                for(int i=0;i<64;i++)
+                    if(trellis_levels[i]!=0) bits+=(int)(2*log2f(abs(trellis_levels[i])+1))+3;
+                *total_bits+=bits+4; /* +4 byte flush overhead */
+
+                /* reconstruct: inverse DCT + add pred */
+                for(int r=0;r<nph;r++)
+                    for(int c=0;c<npw;c++){
+                        int val=recon_blk[r*BS+c]+pred[r*BS+c];
+                        if(val<0)val=0; if(val>255)val=255;
+                        recon_out[(by+r)*W+(bx+c)]=(uint8_t)val;
+                    }
                 continue;
             }
 
@@ -259,20 +276,29 @@ int wubu_encode_frame(const uint8_t* orig,
             for(int i=0;i<npw*nph;i++)
                 res[i]=(int16_t)((int)org_blk[i]-(int)pred[i]);
 
-            /* transform + quantize */
+            /* transform + quantize (standard rounding) */
             int16_t coeffs[64]={0};
             wubu_tr_forward(res,coeffs,BS);
             const uint8_t* qmat=wubu_tr_get_qmat(BS,0);
-            int16_t quant[64];
-            wubu_tr_quantize_m(coeffs,qmat,quant,BS,qp);
 
-            /* bits estimate */
-            int bits=est_block_bits(quant);
+            /* trellis RDOQ on the DCT coefficients */
+            double dcoeffs[64];
+            for(int i=0;i<64;i++)dcoeffs[i]=(double)coeffs[i];
+            int16_t trellis_levels[64];
+            double qstep=qmat[0]*(qp/6+4);
+            wubu_trellis_quantize(dcoeffs,64,qstep,lambda,trellis_levels);
 
-            /* reconstruct residual path: dequantize + inverse DCT */
+            /* dequantize trellis levels */
             int16_t dq[64], recon_res[64];
-            wubu_tr_dequantize_m(quant,qmat,dq,BS,qp);
+            for(int i=0;i<64;i++){
+                dq[i]=(int16_t)((trellis_levels[i]*(int)qstep)>>4);
+            }
             wubu_tr_inverse(dq,recon_res,BS);
+
+            /* bits estimate from trellis levels */
+            int bits=0;
+            for(int i=0;i<64;i++)
+                if(trellis_levels[i]!=0) bits+=(int)(2*log2f(abs(trellis_levels[i])+1))+3;
 
             /* compute SSE for both paths */
             /* SKIP: SSE(orig, pred) */

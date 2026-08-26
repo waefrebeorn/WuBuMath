@@ -1,17 +1,19 @@
-/*
- * wubu_trellis.c -- GROUP 8: Trellis quantization (RDOQ)
- *
- * G8.06: Rate-distortion optimized quantization via Viterbi trellis.
- *
- * Standard quantization picks the closest reconstruction level for each
- * coefficient independently. Trellis quantization considers the ENTROPY
- * COST of each decision jointly — sometimes choosing a non-nearest level
- * for one coefficient saves more bits than it costs in distortion.
- *
- * For each DCT coefficient, the trellis has states = possible levels
- * {floor(q), ceil(q), 0}. The Viterbi algorithm finds the globally
- * optimal path through all coefficients.
- */
+/* wubu_trellis.c — C10: Trellis Rate-Distortion Optimized Quantization (RDOQ)
+
+GROUP 8: Trellis quantization (RDOQ)
+G8.06: Rate-distortion optimized quantization via per-coefficient optimization.
+
+For each DCT coefficient independently, tries candidate levels {0, floor(q), ceil(q)}
+and picks the one minimizing D + λ·R where:
+  - D = (coeff - level*qstep)^2  (squared error)
+  - R = bits needed to code this level
+
+Since our bit model is context-independent (bits depend only on |level|), the
+per-coefficient decision IS the globally optimal trellis result.
+
+Exit: trellis-RDOQ must beat or match rounding-based quantization on SSE+λ·bits.
+*/
+
 #define M_PI 3.14159265358979f
 #include "wubu_trellis.h"
 #include <stdlib.h>
@@ -21,9 +23,10 @@
 /* bits needed to code a nonzero coefficient value */
 static int tr_bits_for_level(int level){
     int abs_level=abs(level);
-    if(abs_level==0)return 1; /* just significant flag */
-    /* exp-Golomb approximation: 2*log2(|level|+1) + sign + sig flag */
-    return (int)(2*log2((double)abs_level+1))+3;
+    if(abs_level==0)return 0;
+    if(abs_level==1)return 3;
+    int k=(int)floor(log2((double)abs_level+1));
+    return k*2+1+1;
 }
 
 /* distortion of coding original value x as level l */
@@ -35,115 +38,94 @@ static double tr_distortion(double coeff,int level,int qstep){
 
 /*
  * Trellis-optimized quantization of one coefficient block.
- * For each coefficient, tries: floor, ceil, and zero as candidate levels.
- * Uses Viterbi DP to find the path minimizing Σ(D + λ·R).
+ * For each coefficient independently, picks the level in {0, floor(q), ceil(q)}
+ * that minimizes D + λ·R.
  *
- * Returns total RD cost. Writes optimal levels to output.
+ * Returns total RD cost. Writes optimal levels to output_levels.
  */
 double wubu_trellis_quantize(const double* coeffs,int n_coeffs,
                               int qstep,double lambda,
                               int16_t* output_levels){
-    if(n_coeffs<=0)return 0;
-    
-    /* max candidates per coefficient: floor, ceil, 0 */
-    const int MAX_CAND=3;
-    
-    /* cost[i][j] = min cumulative RD cost up to coeff i, using candidate j */
-    double* cost=calloc((size_t)n_coeffs*MAX_CAND,sizeof(double));
-    int8_t* parent=calloc((size_t)n_coeffs*MAX_CAND,sizeof(int8_t));
-    
-    /* enumerate candidates for each coefficient */
-    int16_t* cand_levels=malloc(sizeof(int16_t)*(size_t)n_coeffs*MAX_CAND);
-    int* n_cand_arr=calloc((size_t)n_coeffs,sizeof(int));
-    
+    if(n_coeffs<=0||!coeffs||!output_levels)return 0;
+
+    double total_rd=0.0;
+
     for(int i=0;i<n_coeffs;i++){
-        int base=i*MAX_CAND;
         double c=coeffs[i];
-        
-        if(c==0){
-            cand_levels[base]=0;n_cand_arr[i]=1;
-            continue;
-        }
-        
-        double q=(double)c/qstep;
-        int fl=(int)floor(q),ce=(int)ceil(q);
-        
-        /* always include zero as an option */
-        cand_levels[base+0]=0;
-        cand_levels[base+1]=(int16_t)fl;
-        n_cand_arr[i]=2;
-        
-        if(ce!=fl){
-            cand_levels[base+n_cand_arr[i]]=(int16_t)ce;
-            n_cand_arr[i]++;
-        }
-    }
-    
-    /* forward pass (Viterbi) */
-    for(int i=0;i<n_coeffs;i++){
-        int nc=n_cand_arr[i];
+        double q=c/(double)qstep;
+
+        /* generate candidate levels: 0, floor(q), ceil(q) */
+        int16_t candidates[3];
+        int nc=0;
+
+        /* always include zero */
+        candidates[nc++]=0;
+
+        int fl=(int)floor(q);
+        int ce=(int)ceil(q);
+
+        /* include floor if different from zero */
+        if(fl!=0)candidates[nc++]=fl;
+
+        /* include ceil if different from floor and zero */
+        if(ce!=fl&&ce!=0)candidates[nc++]=ce;
+
+        /* find best candidate minimizing D + λ·R */
+        double best_rd=1e18;
+        int best_c=0;
+
         for(int j=0;j<nc;j++){
-            int level=cand_levels[i*MAX_CAND+j];
-            double dist=tr_distortion(coeffs[i],level,qstep);
+            int level=candidates[j];
+            double dist=tr_distortion(c,qstep,level);
             int bits=(level!=0)?tr_bits_for_level(level):0;
-            
-            if(i==0){
-                cost[j]=dist+lambda*bits;
-                parent[0]=0; /* no parent for first */
-            }else{
-                /* transition from best previous state (independent per-coeff model) */
-                double prev_best=cost[(i-1)*MAX_CAND]; /* use first candidate as base */
-                cost[i*MAX_CAND+j]=prev_best+dist+lambda*bits;
+            double rd=dist+lambda*(double)bits;
+            if(rd<best_rd){
+                best_rd=rd;
+                best_c=j;
             }
         }
+
+        output_levels[i]=candidates[best_c];
+        total_rd+=best_rd;
     }
-    
-    /* backtrack from best final state */
-    int last_idx=(n_coeffs-1)*MAX_CAND;
-    double best_cost=cost[last_idx];
-    int best_state=0;
-    for(int j=1;j<n_cand_arr[n_coeffs-1];j++){
-        if(cost[last_idx+j]<best_cost){best_cost=cost[last_idx+j];best_state=j;}
-    }
-    
-    output_levels[n_coeffs-1]=cand_levels[(n_coeffs-1)*MAX_CAND+best_state];
-    for(int i=n_coeffs-2;i>=0;i--){
-        /* simple backtracking: pick lowest-cost state at each step */
-        int bc=0;
-        double bcost=cost[i*MAX_CAND];
-        for(int j=1;j<n_cand_arr[i];j++)
-            if(cost[i*MAX_CAND+j]<bcost){bcost=cost[i*MAX_CAND+j];bc=j;}
-        output_levels[i]=cand_levels[i*MAX_CAND+bc];
-    }
-    
-    free(cost);free(parent);free(cand_levels);free(n_cand_arr);
-    return best_cost;
+
+    return total_rd;
 }
 
-/* compare trellis vs standard rounding on a test block */
+/*
+ * Compare trellis vs standard rounding on a block.
+ * Returns total trellis RD cost.
+ * Outputs: SSE and bits for both methods.
+ */
 long wubu_trellis_vs_rounding(const double* coeffs,int n_coeffs,
-                                int qstep,double lambda,
-                                long* out_sse_standard,long* out_bits_standard,
-                                long* out_sse_trellis,long* out_bits_trellis){
-    /* standard: round to nearest */
+                              int qstep,double lambda,
+                              long* out_sse_standard,long* out_bits_standard,
+                              long* out_sse_trellis,long* out_bits_trellis){
+    if(!coeffs||!out_sse_standard||!out_bits_standard||
+       !out_sse_trellis||!out_bits_trellis)return -1;
+
+    /* ---- standard rounding ---- */
     int16_t std_levels[256];
-    *out_sse_standard=0;*out_bits_standard=0;
+    *out_sse_standard=0;
+    *out_bits_standard=0;
     for(int i=0;i<n_coeffs;i++){
-        int level=(int)(coeffs[i]/qstep+(coeffs[i]>=0?0.5:-0.5));
+        double q=coeffs[i]/(double)qstep;
+        int level=(int)floor(q+(q>=0.0?0.5:-0.5));
         std_levels[i]=(int16_t)level;
         *out_sse_standard+=(long)tr_distortion(coeffs[i],level,qstep);
         if(level!=0)*out_bits_standard+=tr_bits_for_level(level);
     }
-    
-    /* trellis */
+
+    /* ---- trellis ---- */
     int16_t tr_levels[256];
     double rd=wubu_trellis_quantize(coeffs,n_coeffs,qstep,lambda,tr_levels);
-    
-    *out_sse_trellis=0;*out_bits_trellis=0;
+
+    *out_sse_trellis=0;
+    *out_bits_trellis=0;
     for(int i=0;i<n_coeffs;i++){
         *out_sse_trellis+=(long)tr_distortion(coeffs[i],tr_levels[i],qstep);
         if(tr_levels[i]!=0)*out_bits_trellis+=tr_bits_for_level(tr_levels[i]);
     }
-    
+
     return (long)rd;
 }
