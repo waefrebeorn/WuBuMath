@@ -5,7 +5,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void wubu_me_block(const uint8_t* curr,const uint8_t* ref,
+long wubu_me_block(const uint8_t* curr,const uint8_t* ref,
                     int W,int H,int bx,int by,int bs,
                     int search_range,int* out_dx,int* out_dy);
 int  wubu_me_frame(const uint8_t* curr,const uint8_t* ref,

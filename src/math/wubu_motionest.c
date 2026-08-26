@@ -34,7 +34,7 @@ static long me_sad(const uint8_t* curr,const uint8_t* ref,
 }
 
 /* find best motion vector for one block using diamond + local search */
-void wubu_me_block(const uint8_t* curr,const uint8_t* ref,
+long wubu_me_block(const uint8_t* curr,const uint8_t* ref,
                     int W,int H,int bx,int by,int bs,
                     int search_range,int* out_dx,int* out_dy){
     /* start at (0,0), do diamond search pattern */
