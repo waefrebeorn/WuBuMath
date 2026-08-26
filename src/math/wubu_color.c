@@ -138,9 +138,10 @@ WubuHSL wubu_rgb_to_hsl(WubuRGB rgb){
 }
 
 float wubu_circular_l1_loss(float pred,float target){
+    /* values on [0,1] circle: 0.0 == 1.0 */
     float diff=pred-target;
-    while(diff>M_PI)diff-=2*M_PI;
-    while(diff<-M_PI)diff+=2*M_PI;
+    while(diff>1.0f)diff-=1.0f;
+    while(diff<-1.0f)diff+=1.0f;
     return fabsf(diff);
 }
 
