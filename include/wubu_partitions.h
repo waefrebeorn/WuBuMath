@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 typedef enum {
-    PART_16x16,PART_16x8,PART_8x16,PART_8x8,PART_8x4,PART_4x8,PART_4x4
+    PART_16x16,PART_16x8,PART_8x16,PART_8x8,PART_8x4,PART_4x8,PART_4x4,PART_AMP
 } wubu_part_type;
 
 typedef struct {
