@@ -264,7 +264,7 @@ $(BIN)/test_g2b: $(SRC)/tests/test_wubu_graph2ball.c $(SRC)/train/wubu_graph2bal
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/train/wubu_graph2ball.c $(SRC)/train/wubu_poincare_emb.c $< -o $@ $(LDFLAGS)
 
-$(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hil $(BIN)/test_st $(BIN)/test_fexp $(BIN)/test_ai2 $(BIN)/test_qr $(BIN)/test_sc $(BIN)/test_bq $(BIN)/test_sp $(BIN)/test_qcodec $(BIN)/test_qi $(BIN)/test_qfinal $(BIN)/test_qz $(BIN)/test_dq $(BIN)/test_scl $(BIN)/test_qsp $(BIN)/test_kfs $(BIN)/test_ksg $(BIN)/test_cv2 $(BIN)/test_dct $(BIN)/test_zr $(BIN)/test_eg2 $(BIN)/test_db $(BIN)/test_ip $(BIN)/test_me $(BIN)/test_yuv $(BIN)/test_mvp $(BIN)/test_dpb $(BIN)/test_cabac $(BIN)/test_part $(BIN)/test_p2 $(BIN)/test_mc2 $(BIN)/test_ang $(BIN)/test_sao $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
+$(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hil $(BIN)/test_st $(BIN)/test_fexp $(BIN)/test_ai2 $(BIN)/test_qr $(BIN)/test_sc $(BIN)/test_bq $(BIN)/test_sp $(BIN)/test_qcodec $(BIN)/test_qi $(BIN)/test_qfinal $(BIN)/test_qz $(BIN)/test_dq $(BIN)/test_scl $(BIN)/test_qsp $(BIN)/test_kfs $(BIN)/test_ksg $(BIN)/test_cv2 $(BIN)/test_dct $(BIN)/test_zr $(BIN)/test_eg2 $(BIN)/test_db $(BIN)/test_ip $(BIN)/test_me $(BIN)/test_yuv $(BIN)/test_mvp $(BIN)/test_dpb $(BIN)/test_cabac $(BIN)/test_part $(BIN)/test_p2 $(BIN)/test_mc2 $(BIN)/test_ang $(BIN)/test_sao $(BIN)/test_ssim $(BIN)/test_hdpc: $(SRC)/tests/test_wubu_hdpc.c $(SRC)/math/wubu_hdpc.c
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -I$(INC) $(SRC)/math/wubu_hdpc.c $< -o $@ $(LDFLAGS)
 
@@ -747,7 +747,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== Attention Frobenius Monitor ===" && $(BIN)/test_af
 	@echo "=== LR Schedule ===" && $(BIN)/test_lr
 	@echo "=== .WUBV Container Format ===" && $(BIN)/test_wubuv
-	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hil $(BIN)/test_st $(BIN)/test_fexp $(BIN)/test_ai2 $(BIN)/test_qr $(BIN)/test_sc $(BIN)/test_bq $(BIN)/test_sp $(BIN)/test_qcodec $(BIN)/test_qi $(BIN)/test_qfinal $(BIN)/test_qz $(BIN)/test_dq $(BIN)/test_scl $(BIN)/test_qsp $(BIN)/test_kfs $(BIN)/test_ksg $(BIN)/test_cv2 $(BIN)/test_dct $(BIN)/test_zr $(BIN)/test_eg2 $(BIN)/test_db $(BIN)/test_ip $(BIN)/test_me $(BIN)/test_yuv $(BIN)/test_mvp $(BIN)/test_dpb $(BIN)/test_cabac $(BIN)/test_part $(BIN)/test_p2 $(BIN)/test_mc2 $(BIN)/test_ang $(BIN)/test_sao $(BIN)/test_hdpc
+	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hil $(BIN)/test_st $(BIN)/test_fexp $(BIN)/test_ai2 $(BIN)/test_qr $(BIN)/test_sc $(BIN)/test_bq $(BIN)/test_sp $(BIN)/test_qcodec $(BIN)/test_qi $(BIN)/test_qfinal $(BIN)/test_qz $(BIN)/test_dq $(BIN)/test_scl $(BIN)/test_qsp $(BIN)/test_kfs $(BIN)/test_ksg $(BIN)/test_cv2 $(BIN)/test_dct $(BIN)/test_zr $(BIN)/test_eg2 $(BIN)/test_db $(BIN)/test_ip $(BIN)/test_me $(BIN)/test_yuv $(BIN)/test_mvp $(BIN)/test_dpb $(BIN)/test_cabac $(BIN)/test_part $(BIN)/test_p2 $(BIN)/test_mc2 $(BIN)/test_ang $(BIN)/test_sao $(BIN)/test_ssim $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
 	@echo "=== Hyperbolic Decision Tree ===" && $(BIN)/test_hdt
@@ -933,3 +933,7 @@ $(BIN)/test_ang: src/tests/test_wubu_angular.c src/math/wubu_angular.c
 $(BIN)/test_sao: src/tests/test_wubu_sao.c src/math/wubu_sao.c
 	@mkdir -p bin
 	$(CC) $(CFLAGS) -Iinclude -DM_PI=3.14159265358979f src/math/wubu_sao.c $< -o $@ -lm
+
+$(BIN)/test_ssim: src/tests/test_wubu_ssim.c src/math/wubu_ssim.c
+	@mkdir -p bin
+	$(CC) $(CFLAGS) -Iinclude -DM_PI=3.14159265358979f src/math/wubu_ssim.c $< -o $@ -lm
