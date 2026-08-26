@@ -26,6 +26,18 @@ long wubu_cabac_finish(WuBuCabacEnc* e);
 void wubu_cabac_init_contexts(CabacContext* contexts,int n_contexts,
                                int init_value,int qp);
 
+/* ===== Decoder (C1) ===== */
+typedef struct {
+    uint8_t* buf;
+    size_t cap;
+    size_t pos;
+} WuBuCabacDec;
+
+void wubu_cabac_decoder_start(WuBuCabacDec* d,const uint8_t* buf,size_t bytes);
+int  wubu_cabac_decode_bin(WuBuCabacDec* d,CabacContext* ctx);
+int  wubu_cabac_decode_bypass(WuBuCabacDec* d);
+long wubu_cabac_decoder_finish(WuBuCabacDec* d);
+
 #ifdef __cplusplus
 }
 #endif
