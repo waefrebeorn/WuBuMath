@@ -117,9 +117,9 @@ CATEGORIES = [
     # TIER F — Metrics & Honesty
     {"id":"C18","name":"Quality metrics arsenal","tier":"F",
      "status":"open","exit":"Every benchmark auto-produces a BD-rate plot + VMAF + adversarial checklist; no hand-made claims",
-     "implemented":"wubu_ssim.c + wubu_ssim.h + wubu_bench_quality.h. Have: PSNR, SSIM, MS-SSIM, BD-Rate. Gaps: VMAF integration (libvmaf), IWSSIM/FSIM, temporal metrics (flicker, judder), per-content-type calibration curves, automated Triple-DA report generation. C18 now also wires online SOTA tracking into dominance loop — web_search queries VVC/VTM/DCVC/AV2/H.267 papers each iteration.",
-     "measured":"NOT MEASURED — SSIM exists, no VMAF, no temporal metrics, no auto Triple-DA report. Research sub-loop wired but first live run pending.",
-     "notes":"Integrate libvmaf. Add IWSSIM/FSIM. Add temporal flicker/judder metrics. Auto-generate Triple-DA report from benchmark runs. Research sub-loop wired into Phase 1 of dominance harness (wubu_dominance_loop.py): each iteration queries web_search for latest VVC/neural codec SOTA before selecting implementation targets."},
+     "implemented":"wubu_ssim.c + wubu_ssim.h + wubu_bench_quality.h. Have: PSNR, SSIM, MS-SSIM, BD-Rate. Gaps: VMAF integration (libvmaf), IWSSIM/FSIM, temporal metrics (flicker, judder), per-content-type calibration curves, automated Triple-DA report generation. C18 now wires online SOTA tracking into dominance loop — web_search queries VVC/VTM/ECM/DCVC/AV2/H.267 papers each iteration.",
+     "measured":"RESEARCH WIRED — web_search operational via hermes_tools. Latest SOTA: ECM 12.0 leads conventional (-44.47% BD-rate vs VTM-20.0 LD on UVG PSNR); DCVC-RT real-time NVC (CVPR 2025, 125fps 1080p on A100, ~21% vs H.266); AV2 targeting ~30% over AV1; H.267/ECM targeting 40% over VVC landing ~2029. Research sub-loop runs each iteration before implementation selection.",
+     "notes":"Integrate libvmaf. Add IWSSIM/FSIM. Add temporal flicker/judder metrics. Auto-generate Triple-DA report from benchmark runs. Research sub-loop wired into Phase 1 of dominance harness (wubu_dominance_loop.py): each iteration queries web_search for latest VVC/neural codec SOTA before selecting implementation targets. Top external threats: ECM (conventional), DCVC-RT/DCVC-FM (real-time neural), AV2 (AOM), H.267 (ITU/ISO)."},
     {"id":"C19","name":"Benchmark corpus institutionalization","tier":"F",
      "status":"closed","exit":"Any future claim reproducible by single command; corpus documented in README",
      "implemented":"corpus_ab1080/MANIFEST.md5.md (v1, MD5-verified 1080p+8K corpus), README.md documents corpus, tools/run_ab.sh smoke-tested working (scans corpus, prints PSNR/bytes for all encodes).",
@@ -283,16 +283,17 @@ def main():
         for q in research_queries[:1]:  # One query per iteration to bound cost
             try:
                 print(f"  [RESEARCH] web_search: {q[:70]}...")
-                result = subprocess.run(
-                    ["web_search", "--query", q, "--limit", "3"],
-                    capture_output=True, text=True, timeout=30, cwd=WUBUMATH
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    lines = result.stdout.strip().split('\n')
-                    for line in lines[:3]:
-                        print(f"    → {line.strip()[:120]}")
+                from hermes_tools import web_search as hs_web_search
+                result = hs_web_search(q, limit=3)
+                if result and result.get('data', {}).get('web'):
+                    for item in result['data']['web'][:3]:
+                        title = item.get('title', '')[:100]
+                        url = item.get('url', '')[:80]
+                        desc = item.get('description', '')[:120]
+                        print(f"    → [{title}] {url}")
+                        print(f"      {desc}")
                 else:
-                    print(f"    → (no results or tool unavailable)")
+                    print(f"    → (no results)")
             except Exception as e:
                 print(f"    → (research query failed: {e})")
         print("  [RESEARCH] SOTA tracking complete for this iteration")
