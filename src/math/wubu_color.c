@@ -108,9 +108,17 @@ float wubu_pq_eotf(uint16_t pq_value){
     return (float)(10000.0*pow(x,4.0));
 }
 
-/* missing utility functions referenced by wubu_loss.c */
+/* utility functions for wubu_loss.c compatibility */
 typedef struct { float h,s,l; } WubuHSL;
 typedef struct { uint8_t r,g,b; } WubuRGB;
+
+static float hue_to_rgb(float p,float q,float t){
+    if(t<0)t+=1;if(t>1)t-=1;
+    if(t<1/6.0)return p+(q-p)*6*t;
+    if(t<1/2.0)return q;
+    if(t<2/3.0)return p+(q-p)*(2/3.0-t)*6;
+    return p;
+}
 
 WubuHSL wubu_rgb_to_hsl(WubuRGB rgb){
     float r=rgb.r/255.0f,g=rgb.g/255.0f,b=rgb.b/255.0f;
@@ -126,7 +134,8 @@ WubuHSL wubu_rgb_to_hsl(WubuRGB rgb){
         else h=(r-g)/d+4;
         h/=6;
     }
-    return (WubuHSL){h*360,s,l};
+    WubuHSL out={h*360,s,l};
+    return out;
 }
 
 float wubu_circular_l1_loss(float pred,float target){
@@ -134,4 +143,23 @@ float wubu_circular_l1_loss(float pred,float target){
     while(diff>M_PI)diff-=2*M_PI;
     while(diff<-M_PI)diff+=2*M_PI;
     return fabsf(diff);
+}
+
+WubuRGB wubu_hsl_to_rgb(WubuHSL hsl){
+    float h=hsl.h/360.0f,s=hsl.s,l=hsl.l;
+    float r,g,b;
+    if(s==0){r=g=b=l;}
+    else{
+        float q=l<0.5f?l*(1+s):l+s-l*s;
+        float p=2*l-q;
+        r=hue_to_rgb(p,q,h+1.0f/3);
+        g=hue_to_rgb(p,q,h);
+        b=hue_to_rgb(p,q,h-1.0f/3);
+    }
+    WubuRGB out={(uint8_t)(r*255),(uint8_t)(g*255),(uint8_t)(b*255)};
+    return out;
+}
+
+uint8_t wubu_rgb_to_grayscale(WubuRGB rgb){
+    return (uint8_t)(0.299*rgb.r+0.587*rgb.g+0.114*rgb.b);
 }
