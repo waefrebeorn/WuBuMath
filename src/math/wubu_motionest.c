@@ -16,7 +16,7 @@
 #include <math.h>
 
 /* SAD between a block in curr at (bx,by) and ref at (bx+dx,by+dy) */
-static long me_sad(const uint8_t* curr,const uint8_t* ref,
+long wubu_me_sad(const uint8_t* curr,const uint8_t* ref,
                     int W,int H,int bx,int by,int bs,int dx,int dy){
     long sad=0;
     for(int r=0;r<bs;r++){
@@ -39,7 +39,7 @@ long wubu_me_block(const uint8_t* curr,const uint8_t* ref,
                     int search_range,int* out_dx,int* out_dy){
     /* start at (0,0), do diamond search pattern */
     int best_dx=0,best_dy=0;
-    long best_sad=me_sad(curr,ref,W,H,bx,by,bs,0,0);
+    long best_sad=wubu_me_sad(curr,ref,W,H,bx,by,bs,0,0);
 
     /* diamond search: check 4 neighbors iteratively */
     static const int dia_dx[]={0,-1,0,1,0};
@@ -52,7 +52,7 @@ long wubu_me_block(const uint8_t* curr,const uint8_t* ref,
             int ndx=best_dx+dia_dx[d];
             int ndy=best_dy+dia_dy[d];
             if(abs(ndx)>search_range||abs(ndy)>search_range)continue;
-            long sad=me_sad(curr,ref,W,H,bx,by,bs,ndx,ndy);
+            long sad=wubu_me_sad(curr,ref,W,H,bx,by,bs,ndx,ndy);
             if(sad<best_sad){
                 best_sad=sad;best_dx=ndx;best_dy=ndy;
                 improved=1;
@@ -66,7 +66,7 @@ long wubu_me_block(const uint8_t* curr,const uint8_t* ref,
             if(dx==0&&dy==0)continue;
             int ndx=best_dx+dx,ndy=best_dy+dy;
             if(abs(ndx)>search_range||abs(ndy)>search_range)continue;
-            long sad=me_sad(curr,ref,W,H,bx,by,bs,ndx,ndy);
+            long sad=wubu_me_sad(curr,ref,W,H,bx,by,bs,ndx,ndy);
             if(sad<best_sad){
                 best_sad=sad;best_dx=ndx;best_dy=ndy;
             }
