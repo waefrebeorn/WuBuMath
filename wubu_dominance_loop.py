@@ -283,17 +283,38 @@ def main():
         for q in research_queries[:1]:  # One query per iteration to bound cost
             try:
                 print(f"  [RESEARCH] web_search: {q[:70]}...")
-                from hermes_tools import web_search as hs_web_search
-                result = hs_web_search(q, limit=3)
-                if result and result.get('data', {}).get('web'):
-                    for item in result['data']['web'][:3]:
-                        title = item.get('title', '')[:100]
-                        url = item.get('url', '')[:80]
-                        desc = item.get('description', '')[:120]
-                        print(f"    → [{title}] {url}")
-                        print(f"      {desc}")
-                else:
-                    print(f"    → (no results)")
+                # Try hermes_tools first (inside Hermes runtime), fall back to requests
+                try:
+                    from hermes_tools import web_search as hs_web_search
+                    result = hs_web_search(q, limit=3)
+                    if result and result.get('data', {}).get('web'):
+                        for item in result['data']['web'][:3]:
+                            title = item.get('title', '')[:100]
+                            url = item.get('url', '')[:80]
+                            desc = item.get('description', '')[:120]
+                            print(f"    → [{title}] {url}")
+                            print(f"      {desc}")
+                    else:
+                        print(f"    → (no results)")
+                except ImportError:
+                    # Standalone mode: use requests to a search API
+                    import requests
+                    try:
+                        resp = requests.get(
+                            "https://api.duckduckgo.com",
+                            params={"q": q, "format": "json", "no_html": 1, "skip_disambig": 1},
+                            timeout=15
+                        )
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            abstract = data.get('AbstractText', '')[:200] or '(no abstract)'
+                            heading = data.get('Heading', '')[:100] or '(no heading)'
+                            print(f"    → [{heading}] (DuckDuckGo)")
+                            print(f"      {abstract}")
+                        else:
+                            print(f"    → (DDG returned {resp.status_code})")
+                    except Exception as req_err:
+                        print(f"    → (standalone research unavailable: {req_err})")
             except Exception as e:
                 print(f"    → (research query failed: {e})")
         print("  [RESEARCH] SOTA tracking complete for this iteration")
