@@ -75,11 +75,11 @@
       "id": "C8",
       "name": "Scene-adaptive encoding",
       "tier": "B",
-      "status": "open",
+      "status": "in_progress",
       "exit": "Each content type gets a tuned preset that beats generic preset by \u22658%",
       "implemented": "wubu_scene.c + wubu_scene.h + wubu_scene_cut.h exist. Have: scene-change histogram detection, complexity metric, CRF mode, VBV, lookahead. Gaps: per-scene GOP sizing, grain-aware QP offsets, animation-specific mode, variety-show cut detector tuning",
       "measured": "NOT MEASURED \u2014 scene detection exists but no per-scene tuning loop",
-      "notes": "Implement: per-scene GOP sizing, grain-aware QP, animation flat-region long-skip mode."
+      "notes": "Scene-adaptive QP based on frame variance. Implemented in wubu_scene_adaptive.c. Tested on AGI movie (uniform variance \u2192 small gain). Needs testing on varied content."
     },
     {
       "id": "C9",
