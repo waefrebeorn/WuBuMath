@@ -43,3 +43,6 @@ dataset/
 *.db
 *.sqlite
 output/
+test_frames/
+test_frames_320/
+__pycache__/

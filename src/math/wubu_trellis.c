@@ -21,12 +21,14 @@ Exit: trellis-RDOQ must beat or match rounding-based quantization on SSE+λ·bit
 #include <math.h>
 
 /* bits needed to code a nonzero coefficient value */
-static int tr_bits_for_level(int level){
-    int abs_level=abs(level);
-    if(abs_level==0)return 0;
-    if(abs_level==1)return 3;
-    int k=(int)floor(log2((double)abs_level+1));
-    return k*2+1+1;
+int tr_bits_for_level(int level){
+    /* Matches exp-Golomb cost: code=(s>0?2s-1:-2s), bits=2*floor(log2(code+1))+1 */
+    int s = level;
+    unsigned code = (s > 0) ? (unsigned)(2*s - 1) : (unsigned)(-2*s);
+    int k = 0;
+    unsigned v1 = code + 1;
+    while ((v1 >> (k + 1)) && k < 30) k++;
+    return 2*k + 1;
 }
 
 /* distortion of coding original value x as level l */

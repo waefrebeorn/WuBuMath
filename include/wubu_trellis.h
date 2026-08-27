@@ -11,6 +11,7 @@ long   wubu_trellis_vs_rounding(const double* coeffs,int n_coeffs,
                                   int qstep,double lambda,
                                   long* out_sse_std,long* out_bits_std,
                                   long* out_sse_tr,long* out_bits_tr);
+int    tr_bits_for_level(int level);
 #ifdef __cplusplus
 }
 #endif

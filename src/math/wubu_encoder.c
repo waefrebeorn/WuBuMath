@@ -150,8 +150,13 @@ static int est_block_bits(const int16_t* quant){
     int bits=0;
     for(int i=0;i<64;i++){
         if(quant[i]!=0){
-            int level=abs(quant[i]);
-            bits+=(int)(2*log2f(level+1))+3;
+            /* Matches exp-Golomb cost: code=(s>0?2s-1:-2s), bits=2*floor(log2(code+1))+1 */
+            int s = quant[i];
+            unsigned code = (s > 0) ? (unsigned)(2*s - 1) : (unsigned)(-2*s);
+            int k = 0;
+            unsigned v1 = code + 1;
+            while ((v1 >> (k + 1)) && k < 30) k++;
+            bits += 2*k + 1;
         }
     }
     return bits+4; /* ~4 byte flush overhead */
@@ -223,11 +228,11 @@ int wubu_encode_frame(const uint8_t* orig,
                 }
                 wubu_tr_inverse(dq,recon_blk,BS);
 
-                /* bits estimate from trellis levels */
+                /* bits estimate from trellis levels (exp-Golomb cost) */
                 int bits=0;
                 for(int i=0;i<64;i++)
-                    if(trellis_levels[i]!=0) bits+=(int)(2*log2f(abs(trellis_levels[i])+1))+3;
-                *total_bits+=bits+4; /* +4 byte flush overhead */
+                    if(trellis_levels[i]!=0) bits+=tr_bits_for_level(trellis_levels[i]);
+                *total_bits+=bits+4;
 
                 /* reconstruct: inverse DCT + add pred */
                 for(int r=0;r<nph;r++)
@@ -292,7 +297,7 @@ int wubu_encode_frame(const uint8_t* orig,
             for(int i=0;i<64;i++) dq8[i]=(int16_t)((levels8[i]*(int)qstep8)>>4);
             wubu_tr_inverse(dq8,recon8,BS);
             int bits8=0;
-            for(int i=0;i<64;i++) if(levels8[i]!=0) bits8+=(int)(2*log2f(abs(levels8[i])+1))+3;
+            for(int i=0;i<64;i++) if(levels8[i]!=0) bits8+=tr_bits_for_level(levels8[i]);
             long sse8=0;
             for(int i=0;i<npw*nph;i++){
                 int val=pred[i]+recon8[i];
@@ -319,7 +324,7 @@ int wubu_encode_frame(const uint8_t* orig,
                 for(int i=0;i<64;i++) dq_dst7[i]=(int16_t)((levels_dst7[i]*(int)qstep_dst7)>>4);
                 wubu_tr_inverse_dst7_4x4(dq_dst7,recon_dst7);
                 int bits_dst7=0;
-                for(int i=0;i<64;i++) if(levels_dst7[i]!=0) bits_dst7+=(int)(2*log2f(abs(levels_dst7[i])+1))+3;
+                for(int i=0;i<64;i++) if(levels_dst7[i]!=0) bits_dst7+=tr_bits_for_level(levels_dst7[i]);
                 long sse_dst7=0;
                 for(int i=0;i<npw*nph;i++){
                     int val=pred[i]+recon_dst7[i];
@@ -368,7 +373,7 @@ int wubu_encode_frame(const uint8_t* orig,
                             recon4[sy*BS+sx+c]=sub_recon[r*4+c];
                 }
                 int bits4=0;
-                for(int i=0;i<64;i++) if(levels4[i]!=0) bits4+=(int)(2*log2f(abs(levels4[i])+1))+3;
+                for(int i=0;i<64;i++) if(levels4[i]!=0) bits4+=tr_bits_for_level(levels4[i]);
                 long sse4=0;
                 for(int i=0;i<npw*nph;i++){
                     int val=pred[i]+recon4[i];
@@ -397,7 +402,7 @@ int wubu_encode_frame(const uint8_t* orig,
 
             /* use best transform for reconstruction */
             int bits=0;
-            for(int i=0;i<64;i++) if(best_levels[i]!=0) bits+=(int)(2*log2f(abs(best_levels[i])+1))+3;
+            for(int i=0;i<64;i++) if(best_levels[i]!=0) bits+=tr_bits_for_level(best_levels[i]);
 
             /* compute SSE for both paths */
             /* SKIP: SSE(orig, pred) */
