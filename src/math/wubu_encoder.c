@@ -24,6 +24,7 @@
 #include "wubu_bframe2.h"
 #include "wubu_motionest.h"
 #include "wubu_deblock.h"
+#include "wubu_sao.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -458,6 +459,21 @@ int wubu_encode_frame(const uint8_t* orig,
 
     /* C12: deblocking filter on reconstructed frame (single-plane) */
     wubu_db_filter_plane(recon_out, W, H, qp);
+
+    /* C13: SAO (Sample Adaptive Offset) post-filter */
+    /* Estimate and apply band offset */
+    {
+        int band_offsets[4] = {0};
+        wubu_sao_band_estimate(orig, recon_out, W, H, 0, band_offsets, 4);
+        wubu_sao_band(recon_out, recon_out, W, H, 0, band_offsets, 4);
+        
+        /* Estimate and apply edge offset */
+        for (int dir = 0; dir < 4; dir++) {
+            int eo_offsets[5] = {0};
+            wubu_sao_edge_estimate(orig, recon_out, W, H, dir, eo_offsets);
+            wubu_sao_edge(recon_out, recon_out, W, H, dir, eo_offsets);
+        }
+    }
 
     if(computed_mv) free(computed_mv);
     return 0;
