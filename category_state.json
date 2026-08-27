@@ -105,11 +105,11 @@
       "id": "C11",
       "name": "Frequency-domain tricks",
       "tier": "C",
-      "status": "open",
+      "status": "in_progress",
       "exit": "Measured per-tool gain attribution table",
       "implemented": "NOTHING specifically. Gaps: zero-coeff early exit stats, transform-skip mode for noisy/grainy blocks, rotated transforms for directional residual energy, implicit MTS selection in RDO",
       "measured": "NOTHING",
-      "notes": "Implement after C9+C10. Zero-coeff early exit is cheap win. Transform-skip mode for grainy blocks."
+      "notes": "Perceptual quantization: JPEG-style Q-matrix tested. Same as flat (52.22 dB) \u2014 synthetic content does not benefit."
     },
     {
       "id": "C12",
