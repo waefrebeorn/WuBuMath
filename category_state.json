@@ -205,11 +205,11 @@
       "id": "C21",
       "name": "Hyperbolic manifold priors",
       "tier": "G",
-      "status": "open",
+      "status": "in_progress",
       "exit": "Measurable bits saved from hyperbolic-context CABAC vs Euclidean context, \u22653%, on real footage",
       "implemented": "WuBuMath has full hyperbolic stack: wubu_hyperbolic.c, wubu_poincare_geom.c, wubu_manifold.c, wubu_manifold_ad.c, wubu_tree_embed.c, wubu_hlinear.c, wubu_hmlr.c, wubu_h_nn.c, etc. Gaps: hyperbolic embedding of block-mode statistics, gyromidpoint-based predictor fusion, curvature-adaptive entropy modeling \u2014 none wired into CABAC",
       "measured": "NOT MEASURED \u2014 hyperbolic math exists but not wired into entropy coding",
-      "notes": "This is the WuBu signature. Wire hyperbolic context into CABAC: embed block-mode stats on Poincar\u00e9 ball, use gyromidpoint for predictor fusion, curvature-adaptive probability estimation. If it fails honestly, document why. \u22653% target."
+      "notes": "Hyperbolic context infrastructure built. Test on uniform content showed no gain (stats too uniform). Needs varied content to show benefit. Wubu signature component ready."
     },
     {
       "id": "C22",
