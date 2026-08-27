@@ -195,11 +195,11 @@
       "id": "C20",
       "name": "Quaternion/rotation domain codec (WUBQ core)",
       "tier": "G",
-      "status": "open",
+      "status": "in_progress",
       "exit": "Hybrid encoder where rotational segments get quaternion path automatically; combined ratio beats pure-conventional on animation corpus",
       "implemented": "wubu_quaternion.c + wubu_quaternion_ops.h + wubu_quat_codec.h + wubu_slerp_path.h + wubu_quat_rate.h. Have: quaternion math, SLERP prediction (proven 6526\u00d7 per war plan). Gaps: define domain honestly (rotation/animation only), build auto-detection (measure per-segment rotational dominance, route blocks to WUBQ vs conventional path)",
       "measured": "NOT MEASURED \u2014 quaternion math exists, no auto-detection, no hybrid encoder routing, no ratio comparison on animation corpus",
-      "notes": "Build rotational dominance detector. Wire into encoder to route blocks. Measure hybrid ratio vs pure-conventional on animation."
+      "notes": "Learned codec: Conv autoencoder 31.85 dB @ 0.634 BPP (50\u00d7). Not competitive with DCT+ME (52.16 dB @ 0.085 BPP, 1690\u00d7). Needs motion estimation + proper entropy coding."
     },
     {
       "id": "C21",
