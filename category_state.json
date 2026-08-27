@@ -55,11 +55,11 @@
       "id": "C6",
       "name": "Intra prediction depth",
       "tier": "B",
-      "status": "open",
+      "status": "in_progress",
       "exit": "Screen-content + anime intra frames \u226510% smaller than current angular-only",
       "implemented": "wubu_angular.c + wubu_intra.h. Have: DC/vertical/horizontal/plane + angular core (35 modes). Gaps: MRL, MIP, ISP, cross-component (CCLM exists in wubu_cclm.c but needs integration), PDPC, reference sample smoothing",
       "measured": "NOT MEASURED \u2014 no intra RD comparison on screen-content/anime",
-      "notes": "CCLM code exists (wubu_cclm.c) but is not wired into the intra prediction decision. Integrate CCLM \u2192 measure gain."
+      "notes": "Intra prediction: DC/vert/horiz/plane modes implemented. Issue: causal neighbor availability requires incremental encoding. Current: 9.51 dB (needs fix). Self-reference gives 52.16 dB but is not standard-compliant."
     },
     {
       "id": "C7",
