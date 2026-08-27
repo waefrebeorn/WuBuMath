@@ -185,9 +185,16 @@ int wubu_encode_frame(const uint8_t* orig,
     int16_t* computed_mv = NULL;
     if(mv_grid == NULL && ref_past != NULL && frame_type != WUBU_I_FRAME) {
         int nbx = W / BS, nby = H / BS;
-        computed_mv = malloc((size_t)nbx * nby * 2 * sizeof(int16_t));
-        if(computed_mv) {
-            wubu_me_frame(orig, ref_past, W, H, BS, 8, computed_mv);
+        /* wubu_me_frame writes int (4 bytes), so use int buffer */
+        int* mv_buf = malloc((size_t)nbx * nby * 2 * sizeof(int));
+        if(mv_buf) {
+            wubu_me_frame(orig, ref_past, W, H, BS, 8, mv_buf);
+            /* Convert to int16_t */
+            computed_mv = malloc((size_t)nbx * nby * 2 * sizeof(int16_t));
+            if(computed_mv) {
+                for(int i=0;i<nbx*nby*2;i++) computed_mv[i] = (int16_t)mv_buf[i];
+            }
+            free(mv_buf);
         }
     }
     const int16_t* mvs = mv_grid ? mv_grid : computed_mv;
@@ -218,30 +225,21 @@ int wubu_encode_frame(const uint8_t* orig,
                 for(int i=0;i<npw*nph;i++)
                     res[i]=(int16_t)((int)org_blk[i]-(int)pred[i]);
 
-                /* transform + quantize (standard rounding) */
+                /* transform + quantize using simple shift (matches integrated codec) */
                 int16_t coeffs[64]={0};
                 wubu_tr_forward(res,coeffs,BS);
-                double dcoeffs[64];
-                for(int i=0;i<64;i++)dcoeffs[i]=(double)coeffs[i];
-                const uint8_t* qmat=wubu_tr_get_qmat(BS,1);
-                int16_t quant[64];
-                wubu_tr_quantize_m(coeffs,qmat,quant,BS,qp);
-
-                /* trellis RDOQ: find optimal levels minimizing SSE+λ·bits */
+                int qshift = qp / 2;
+                if (qshift < 1) qshift = 1;
+                int qstep = qshift + 1;
                 int16_t trellis_levels[64];
-                double trellis_rd=wubu_trellis_quantize(dcoeffs,64,
-                    qmat[0]*(int)(qp/6+4),lambda,trellis_levels);
+                for(int i=0;i<64;i++) trellis_levels[i] = (int16_t)(coeffs[i] / qstep);
 
-                /* Use trellis levels for reconstruction (lower SSE at same/near bits) */
+                /* Use simple rounded levels for reconstruction */
                 int16_t dq[64], recon_blk[64];
-                /* dequantize trellis levels: level * qstep (qstep = qmat[0]*(qp/6+4)/16) */
-                int qstep=qmat[0]*(qp/6+4);
-                for(int i=0;i<64;i++){
-                    dq[i]=(int16_t)((trellis_levels[i]*(int)qstep)>>4);
-                }
-                wubu_tr_inverse(dq,recon_blk,BS);
+                for(int i=0;i<64;i++) dq[i] = (int16_t)(trellis_levels[i] * qstep);
+                wubu_tr_inverse(dq, recon_blk, BS);
 
-                /* bits estimate from trellis levels (exp-Golomb cost) */
+                /* bits estimate from levels (exp-Golomb cost) */
                 int bits=0;
                 for(int i=0;i<64;i++)
                     if(trellis_levels[i]!=0) bits+=tr_bits_for_level(trellis_levels[i]);
@@ -296,18 +294,18 @@ int wubu_encode_frame(const uint8_t* orig,
 
             /* ===== C9: variable-size transform selection ===== */
             /* Try candidate transforms, pick best RD (SSE + λ·bits) */
+            int qshift = qp / 2;
 
             /* candidate 1: 8x8 DCT (baseline) */
             int16_t coeffs8[64]={0};
             wubu_tr_forward(res,coeffs8,BS);
-            const uint8_t* qmat8=wubu_tr_get_qmat_size(BS,0);
             double dcoeffs8[64];
             for(int i=0;i<64;i++)dcoeffs8[i]=(double)coeffs8[i];
             int16_t levels8[64];
-            double qstep8=qmat8[0]*(qp/6+4);
+            double qstep8 = 1 << qshift;
             wubu_trellis_quantize(dcoeffs8,64,qstep8,lambda,levels8);
             int16_t dq8[64], recon8[64];
-            for(int i=0;i<64;i++) dq8[i]=(int16_t)((levels8[i]*(int)qstep8)>>4);
+            for(int i=0;i<64;i++) dq8[i]=(int16_t)(levels8[i]*qstep8);
             wubu_tr_inverse(dq8,recon8,BS);
             int bits8=0;
             for(int i=0;i<64;i++) if(levels8[i]!=0) bits8+=tr_bits_for_level(levels8[i]);
@@ -319,22 +317,18 @@ int wubu_encode_frame(const uint8_t* orig,
                 }
             double rd8=(double)sse8+lambda*bits8;
 
-            /* candidate 2: 8x8 DST-VII (intra only — sharper for directional residuals) */
+            /* candidate 2: 8x8 DST-VII (intra only) */
             int16_t coeffs_dst7[64]={0};
             double rd_dst7=1e30;
             int16_t levels_dst7[64], dq_dst7[64], recon_dst7[64];
-            const uint8_t* qmat_dst7=NULL;
-            double qstep_dst7=0;
             if(frame_type==WUBU_I_FRAME){
-                wubu_tr_forward_dst7_4x4(res,coeffs_dst7);  /* 4x4 DST-VII on 8x8 residual */
-                const uint8_t* qmat_dst7=wubu_tr_get_qmat_size(BS,1);
+                wubu_tr_forward_dst7_4x4(res,coeffs_dst7);
                 double dcoeffs_dst7[64];
                 for(int i=0;i<64;i++)dcoeffs_dst7[i]=(double)coeffs_dst7[i];
-                int16_t levels_dst7[64];
-                double qstep_dst7=qmat_dst7[0]*(qp/6+4);
+                double qstep_dst7 = 1 << qshift;
                 wubu_trellis_quantize(dcoeffs_dst7,64,qstep_dst7,lambda,levels_dst7);
                 int16_t dq_dst7[64], recon_dst7[64];
-                for(int i=0;i<64;i++) dq_dst7[i]=(int16_t)((levels_dst7[i]*(int)qstep_dst7)>>4);
+                for(int i=0;i<64;i++) dq_dst7[i]=(int16_t)(levels_dst7[i]*qstep_dst7);
                 wubu_tr_inverse_dst7_4x4(dq_dst7,recon_dst7);
                 int bits_dst7=0;
                 for(int i=0;i<64;i++) if(levels_dst7[i]!=0) bits_dst7+=tr_bits_for_level(levels_dst7[i]);
@@ -350,11 +344,8 @@ int wubu_encode_frame(const uint8_t* orig,
             /* candidate 3: 4x4 DCT (tile 8x8 block into four 4x4 sub-blocks) */
             int16_t coeffs4[64]={0};
             int16_t levels4[64], dq4[64], recon4[64]={0};
-            const uint8_t* qmat4=NULL;
-            double qstep4=0;
             double rd4=1e30;
             {
-                /* tile: 4 sub-blocks of 4x4 */
                 int16_t sub_in[4][16], sub_out[4][16];
                 for(int sb=0;sb<4;sb++){
                     int sy=(sb/2)*4, sx=(sb%2)*4;
@@ -363,19 +354,15 @@ int wubu_encode_frame(const uint8_t* orig,
                             sub_in[sb][r*4+c]=(int16_t)res[sy*BS+sx+c];
                     wubu_tr_forward_size(4,sub_in[sb],sub_out[sb]);
                 }
-                /* concatenate coefficients */
                 for(int sb=0;sb<4;sb++)
                     for(int i=0;i<16;i++)
                         coeffs4[sb*16+i]=sub_out[sb][i];
-                const uint8_t* qmat4=wubu_tr_get_qmat_size(4,0);
                 double dcoeffs4[64];
                 for(int i=0;i<64;i++)dcoeffs4[i]=(double)coeffs4[i];
-                int16_t levels4[64];
-                double qstep4=qmat4[0]*(qp/6+4);
+                double qstep4 = 1 << qshift;
                 wubu_trellis_quantize(dcoeffs4,64,qstep4,lambda,levels4);
                 int16_t dq4[64];
-                for(int i=0;i<64;i++) dq4[i]=(int16_t)((levels4[i]*(int)qstep4)>>4);
-                /* dequantize + inverse per sub-block */
+                for(int i=0;i<64;i++) dq4[i]=(int16_t)(levels4[i]*qstep4);
                 for(int sb=0;sb<4;sb++){
                     int16_t sub_dq[16], sub_recon[16];
                     for(int i=0;i<16;i++) sub_dq[i]=dq4[sb*16+i];
@@ -401,16 +388,14 @@ int wubu_encode_frame(const uint8_t* orig,
             double rd_best=rd8;
             int16_t* best_levels=levels8;
             int16_t* best_recon=recon8;
-            const uint8_t* best_qmat=qmat8;
-            double best_qstep=qstep8;
 
             if(rd_dst7<rd_best && frame_type==WUBU_I_FRAME){
                 rd_best=rd_dst7; best_tr=1; best_levels=levels_dst7;
-                best_recon=recon_dst7; best_qmat=qmat_dst7; best_qstep=qstep_dst7;
+                best_recon=recon_dst7;
             }
             if(rd4<rd_best){
                 rd_best=rd4; best_tr=2; best_levels=levels4;
-                best_recon=recon4; best_qmat=qmat4; best_qstep=qstep4;
+                best_recon=recon4;
             }
 
             /* use best transform for reconstruction */
