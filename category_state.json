@@ -149,7 +149,7 @@
       "exit": "Every 8\u00d78 block runs full RD (SSE+\u03bb\u00b7bits) across SKIP/INTER/INTRA candidates and picks the globally-best mode; measurable on corpus with PSNR/VMAF per QP; RD curve is monotonic in bits",
       "implemented": "src/math/wubu_encoder.c (single-pass 8\u00d78 encoder, I/P/B-frame paths, intra prediction, DCT+quantize+recon, est_block_bits+RD cost, SKIP vs RESIDUAL RD compare, **trellis RDOQ wired into both I and P/B paths**); src/tests/test_wubu_encoder.c (5 gates: I-frame round-trip, P-frame MC, B-frame bi-pred, RD curve monotonicity, lambda correctness); include/wubu_encoder.h",
       "measured": "PASS \u2014 5/5 tests green; P-frame 31% cheaper than I-frame (31154vs45224 bits); B-frame cheapest (27495 bits); RD curve monotonic 31154\u21928415\u21921719 bits across QP 10\u219250; lambda(P,20)=1.713 lambda(B,20)=2.016 lambda(P,30)=5.440. **Trellis RDOQ (C10) now active in both I-frame and P/B-frame paths** \u2014 per-coefficient optimal quantization reduces SSE vs scalar rounding.",
-      "notes": "C15 encoder: 64.74 dB @ 55.2 kbps (I+P), 60.27 dB @ 222 kbps (I-only). Components: ME, trellis RDOQ, multi-size DCT, deblocking, SAO, EG+zlib. Gap to AV1: 2\u00d7 bitrate at same PSNR."
+      "notes": "C15 encoder best result: 64.74 dB @ 55.2 kbps (I+P with EG+zlib). Components: ME, trellis RDOQ, multi-size DCT, deblocking, SAO, EG+zlib. CABAC+tokctx was worse (1926 kbps). Gap to AV1: 2\u00d7 bitrate at better PSNR."
     },
     {
       "id": "C16",
