@@ -125,11 +125,11 @@
       "id": "C13",
       "name": "SAO + ALF",
       "tier": "D",
-      "status": "open",
+      "status": "in_progress",
       "exit": "ALF+SAO stack gains \u22654% BD-rate on all three types",
       "implemented": "wubu_sao.c + wubu_sao.h \u2014 band + edge SAO exist. Gaps: ALF (adaptive loop filter, Wiener-derived, CCALF cross-component), filter-on/off flags in bitstream, encoder-side filter parameter estimation via least squares",
       "measured": "NOT MEASURED \u2014 SAO exists, ALF not implemented",
-      "notes": "Implement ALF: Wiener-derived filter coefficients, CCALF cross-component, encoder-side least-squares parameter estimation."
+      "notes": "SAO (Sample Adaptive Offset) wired into C15 encoder. Band offset + 4-direction edge offset. Tests pass."
     },
     {
       "id": "C14",
