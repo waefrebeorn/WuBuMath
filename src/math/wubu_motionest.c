@@ -1,15 +1,16 @@
 /*
  * wubu_motionest.c -- GAP-C075: Block matching motion estimation
- * with half-pel refinement.
+ * with quarter-pel refinement.
  *
  * Pipeline:
  *   1. Integer-pel diamond search (fast, near-optimal)
- *   2. Half-pel refinement around best integer MV
+ *   2. Quarter-pel refinement around best integer MV
  *   3. Bilinear interpolation for sub-pel positions
  *
- * Half-pel positions around best integer MV (dx,dy):
- *   (dx,dy), (dx+0.5,dy), (dx-0.5,dy), (dx,dy+0.5), (dx,dy-0.5)
- *   (dx+0.5,dy+0.5), (dx+0.5,dy-0.5), (dx-0.5,dy+0.5), (dx-0.5,dy-0.5)
+ * Quarter-pel positions around best integer MV (dx,dy):
+ *   (dx,dy), (dx+0.25,dy), (dx+0.5,dy), (dx+0.75,dy)
+ *   (dx,dy+0.25), ..., (dx+0.75,dy+0.75)
+ * This gives 16 positions in a 4x4 grid around the integer MV.
  */
 #include "wubu_motionest.h"
 #include <stdlib.h>
@@ -34,21 +35,20 @@ long wubu_me_sad(const uint8_t* curr,const uint8_t* ref,
     return sad;
 }
 
-/* Bilinearly interpolated SAD for half-pel positions.
- * dx,dy are in half-pel units (e.g., dx=1 means 0.5 pel).
- * Returns SAD at the sub-pel position. */
-static long wubu_me_sad_half(const uint8_t* curr,const uint8_t* ref,
+/* Bilinearly interpolated SAD for quarter-pel positions.
+ * dx,dy are in quarter-pel units (e.g., dx=1 means 0.25 pel, dx=2 means 0.5 pel). */
+static long wubu_me_sad_qpel(const uint8_t* curr,const uint8_t* ref,
                                int W,int H,int bx,int by,int bs,
-                               int dx_half,int dy_half){
-    /* dx_half, dy_half in half-pel units. Actual offset = dx_half/2.0, dy_half/2.0 */
+                               int dx_qpel,int dy_qpel){
+    /* dx_qpel, dy_qpel in quarter-pel units. Actual offset = dx_qpel/4.0, dy_qpel/4.0 */
     long sad=0;
     for(int r=0;r<bs;r++){
         for(int c=0;c<bs;c++){
             int cx=bx+c;
             int cy=by+r;
             /* Sub-pel position in the reference */
-            float rx_f = (float)cx + (float)dx_half * 0.5f;
-            float ry_f = (float)cy + (float)dy_half * 0.5f;
+            float rx_f = (float)cx + (float)dx_qpel * 0.25f;
+            float ry_f = (float)cy + (float)dy_qpel * 0.25f;
             int rx0 = (int)floorf(rx_f);
             int ry0 = (int)floorf(ry_f);
             float fx = rx_f - (float)rx0;
@@ -71,7 +71,7 @@ static long wubu_me_sad_half(const uint8_t* curr,const uint8_t* ref,
     return sad;
 }
 
-/* find best motion vector for one block using diamond + half-pel refinement */
+/* find best motion vector for one block using diamond + quarter-pel refinement */
 long wubu_me_block(const uint8_t* curr,const uint8_t* ref,
                     int W,int H,int bx,int by,int bs,
                     int search_range,int* out_dx,int* out_dy){
@@ -97,32 +97,33 @@ long wubu_me_block(const uint8_t* curr,const uint8_t* ref,
         }
     }
 
-    /* Phase 2: Half-pel refinement around best integer MV */
-    /* dx,dy in half-pel units: 0=integer, +1=+0.5, -1=-0.5 */
+    /* Phase 2: Quarter-pel refinement around best integer MV */
+    /* Search in quarter-pel units: -1, 0, 1, 2, 3 (in QPEL units) */
+    /* 0 = integer, 2 = half-pel, 1 = quarter-pel, 3 = three-quarter-pel */
     int best_hx=0, best_hy=0;
-    long best_sad_half=best_sad;
-    for(int dy=-1;dy<=1;dy++){
-        for(int dx=-1;dx<=1;dx++){
+    long best_sad_qpel=best_sad;
+    for(int dy=-1;dy<=3;dy++){
+        for(int dx=-1;dx<=3;dx++){
             if(dx==0&&dy==0)continue;
-            long sad=wubu_me_sad_half(curr,ref,W,H,bx,by,bs,dx,dy);
-            if(sad<best_sad_half){
-                best_sad_half=sad;
+            long sad=wubu_me_sad_qpel(curr,ref,W,H,bx,by,bs,dx,dy);
+            if(sad<best_sad_qpel){
+                best_sad_qpel=sad;
                 best_hx=dx;
                 best_hy=dy;
             }
         }
     }
 
-    /* Combine: integer + half-pel (in half-pel units) */
-    *out_dx = best_dx*2 + best_hx;
-    *out_dy = best_dy*2 + best_hy;
-    return best_sad_half;
+    /* Combine: integer + quarter-pel (in quarter-pel units) */
+    *out_dx = best_dx*4 + best_hx;
+    *out_dy = best_dy*4 + best_hy;
+    return best_sad_qpel;
 }
 
 /* estimate motion vectors for all blocks in a frame */
 int wubu_me_frame(const uint8_t* curr,const uint8_t* ref,
                    int W,int H,int bs,int search_range,
-                   int* out_mvs /* [n_blocks_x*n_blocks_y][2], in half-pel units */){
+                   int* out_mvs /* [n_blocks_x*n_blocks_y][2], in quarter-pel units */){
     int nbx=W/bs,nby=H/bs;
     int count=0;
     for(int by=0;by<nby;by++)
@@ -137,22 +138,22 @@ int wubu_me_frame(const uint8_t* curr,const uint8_t* ref,
 }
 
 /* apply motion compensation: build predicted frame from reference + MVs.
- * MVs are in half-pel units (divide by 2.0 to get actual offset). */
+ * MVs are in quarter-pel units (divide by 4.0 to get actual offset). */
 void wubu_me_compensate(const uint8_t* ref,int W,int H,int bs,
                           const int* mvs,uint8_t* predicted){
     int nbx=W/bs,nby=H/bs;
     int count=0;
     for(int by=0;by<nby;by++)
         for(int bx=0;bx<nbx;bx++){
-            int dx_half=mvs[count*2],dy_half=mvs[count*2+1];
+            int dx_qpel=mvs[count*2],dy_qpel=mvs[count*2+1];
             count++;
             for(int r=0;r<bs;r++){
                 int sy=by*bs+r;
                 for(int c=0;c<bs;c++){
                     int sx=bx*bs+c;
                     /* Sub-pel position in reference */
-                    float rx_f = (float)sx + (float)dx_half * 0.5f;
-                    float ry_f = (float)sy + (float)dy_half * 0.5f;
+                    float rx_f = (float)sx + (float)dx_qpel * 0.25f;
+                    float ry_f = (float)sy + (float)dy_qpel * 0.25f;
                     int rx0 = (int)floorf(rx_f);
                     int ry0 = (int)floorf(ry_f);
                     float fx = rx_f - (float)rx0;

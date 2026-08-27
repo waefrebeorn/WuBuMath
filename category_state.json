@@ -45,11 +45,11 @@
       "id": "C5",
       "name": "Motion estimation completeness",
       "tier": "B",
-      "status": "open",
+      "status": "in_progress",
       "exit": "BD-rate vs current ME on all three content types; anime expected biggest gain from global motion",
       "implemented": "wubu_mc2.c + wubu_motionest.h exist. Have: sub-pel Wiener, diamond/hexagon, skip/merge/AMVP, DPB, OBMC, bi-pred (per war plan 'Have'). Gaps remain: UMHexagonS full, search-range adaptation, sub-block ME in RDO, affine/global motion (VVC 6-param)",
       "measured": "NOT MEASURED \u2014 no BD-rate comparison vs current ME on real content",
-      "notes": "Hardest category. Requires full encoder loop + real video corpus (C19). Defer until C15+C19 exist."
+      "notes": "Quarter-pel ME with bilinear interpolation. Implemented in wubu_motionest.c. Tested on AGI movie (minimal sub-pel motion \u2192 small gain). Needs testing on varied content."
     },
     {
       "id": "C6",
