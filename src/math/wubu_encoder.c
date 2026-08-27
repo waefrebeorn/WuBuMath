@@ -22,7 +22,7 @@
 #include "wubu_intra.h"
 #include "wubu_transform.h"
 #include "wubu_bframe2.h"
-#include "wubu_trellis.h"
+#include "wubu_motionest.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -179,6 +179,17 @@ int wubu_encode_frame(const uint8_t* orig,
     *total_bits=0;
     double lambda=wubu_lambda_from_qp(qp,frame_type);
 
+    /* Compute motion vectors if not provided (P/B frames) */
+    int16_t* computed_mv = NULL;
+    if(mv_grid == NULL && ref_past != NULL && frame_type != WUBU_I_FRAME) {
+        int nbx = W / BS, nby = H / BS;
+        computed_mv = malloc((size_t)nbx * nby * 2 * sizeof(int16_t));
+        if(computed_mv) {
+            wubu_me_frame(orig, ref_past, W, H, BS, 8, computed_mv);
+        }
+    }
+    const int16_t* mvs = mv_grid ? mv_grid : computed_mv;
+
     /* encode in 8×8 blocks */
     for(int by=0;by<H;by+=BS){
         for(int bx=0;bx<W;bx+=BS){
@@ -257,11 +268,11 @@ int wubu_encode_frame(const uint8_t* orig,
             }else if(ref_past){
                 /* P-frame: MC from past ref with MV */
                 int mvx=0,mvy=0;
-                if(mv_grid){
+                if(mvs){
                     int idx=by/BS*(W/BS)+bx/BS;
                     if(idx>=0&&idx<(W/BS)*(H/BS)){
-                        mvx=mv_grid[idx*2];
-                        mvy=mv_grid[idx*2+1];
+                        mvx=mvs[idx*2];
+                        mvy=mvs[idx*2+1];
                     }
                 }
                 mc_pred(ref_past,W,H,mvx,mvy,bx,by,pred);
@@ -444,6 +455,7 @@ int wubu_encode_frame(const uint8_t* orig,
     /* add CABAC stream overhead: header + end-of-stream */
     *total_bits+=8; /* rough header + EOS */
 
+    if(computed_mv) free(computed_mv);
     return 0;
 }
 
