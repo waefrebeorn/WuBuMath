@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 void wubu_db_filter(uint8_t* img,int W,int H,int quality);
+void wubu_db_filter_plane(uint8_t* img,int W,int H,int quality);
 #ifdef __cplusplus
 }
 #endif

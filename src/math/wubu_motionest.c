@@ -29,7 +29,7 @@ long wubu_me_sad(const uint8_t* curr,const uint8_t* ref,
             int cx=bx+c;
             int rx=cx+dx;
             if(rx<0||rx>=W){sad+=(1<<20);continue;}
-            sad+=abs(curr[((size_t)cy*W+cx)*3]-ref[((size_t)ry*W+rx)*3]);
+            sad+=abs(curr[cy*W+cx]-ref[ry*W+rx]);
         }
     }
     return sad;

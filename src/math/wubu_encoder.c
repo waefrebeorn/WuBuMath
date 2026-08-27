@@ -456,8 +456,8 @@ int wubu_encode_frame(const uint8_t* orig,
     /* add CABAC stream overhead: header + end-of-stream */
     *total_bits+=8; /* rough header + EOS */
 
-    /* C12: deblocking filter on reconstructed frame */
-    wubu_db_filter(recon_out, W, H, qp);
+    /* C12: deblocking filter on reconstructed frame (single-plane) */
+    wubu_db_filter_plane(recon_out, W, H, qp);
 
     if(computed_mv) free(computed_mv);
     return 0;
