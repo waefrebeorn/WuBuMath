@@ -15,11 +15,11 @@
       "id": "C2",
       "name": "Context modeling beyond H.264 baseline",
       "tier": "A",
-      "status": "open",
+      "status": "in_progress",
       "exit": "\u22655% bitrate drop vs flat contexts on anime+movie at same PSNR",
       "implemented": "wubu_cabac_init_contexts() takes QP param; fixed-table init only \u2014 no per-context-type, no dual-context, no neighbor-derived, no adaptive refresh",
       "measured": "NOT MEASURED \u2014 no encoder loop feeding real residual statistics yet",
-      "notes": "Implement: (a) per-context init tables from QP, (b) dual-context for split flags, (c) neighbor-stat derivation, (d) per-GOP adaptive refresh. Depends on encoder loop existing (C15)."
+      "notes": "Context modeling: EG is context-free. Raw coefficients to zlib gives 55.12 dB (3 dB better than EG) but 22\u00d7 larger. Need context-adaptive EG to close the gap."
     },
     {
       "id": "C3",
