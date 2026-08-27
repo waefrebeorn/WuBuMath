@@ -23,6 +23,7 @@
 #include "wubu_transform.h"
 #include "wubu_bframe2.h"
 #include "wubu_motionest.h"
+#include "wubu_deblock.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -454,6 +455,9 @@ int wubu_encode_frame(const uint8_t* orig,
 
     /* add CABAC stream overhead: header + end-of-stream */
     *total_bits+=8; /* rough header + EOS */
+
+    /* C12: deblocking filter on reconstructed frame */
+    wubu_db_filter(recon_out, W, H, qp);
 
     if(computed_mv) free(computed_mv);
     return 0;
