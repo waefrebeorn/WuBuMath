@@ -85,11 +85,11 @@
       "id": "C9",
       "name": "Variable-size transforms",
       "tier": "B",
-      "status": "open",
-      "exit": "Full transform-size matrix tested on all segments; \u226512% over 8\u00d78-fixed",
-      "implemented": "wubu_transform.c + wubu_transform.h + wubu_idct8x8.h + wubu_simd_dct.c. Have: DCT butterfly batch, AVX2 SAD. Gaps: 4\u00d74\u201364\u00d764 DCT2 family complete, DST-VII/DCT-VIII for small intra blocks, transform selection signaling, large-block partitioning interplay with TU tree",
-      "measured": "NOT MEASURED \u2014 SIMD DCT exists but no variable-size transform selection in RDO",
-      "notes": "Add 4\u00d74, 8\u00d78, 16\u00d716, 32\u00d732 DCT2 complete family. Add DST-VII/DCT-VIII for intra. Wire into RDO transform selection."
+      "status": "in_progress",
+      "exit": "Full transform-size matrix tested on all segments; >=12% over 8x8-fixed",
+      "implemented": "wubu_transform.c + wubu_transform.h: full DCT2 family (4x4 via dct4_fwd/dct4_inv, 8x8 via wubu_tr_fwd/tr_inv, 16x16 via dct16_fwd/dct16_inv, 32x32 via dct32_fwd/dct32_inv) + 4x4 DST-VII (dst7_fwd4/dst7_inv4) for intra blocks. Per-size qmats: qmat_4x4 (JPEG-style), qmat_8x8 (JPEG-style), qmat_16x16 (JPEG-style), qmat_32x32 (flat). C9 encoder integration DONE: wubu_encode_frame tries {8x8 DCT, 8x8 DST-VII (I-frame only), 4x4 sub-block tiling} and picks best RD (SSE+lambda*bits) via trellis RDOQ. Encoder 5/5 green.",
+      "measured": "IN PROGRESS: encoder compiles and passes 5/5 tests green. Transform selection RDO wired: 8x8 DCT baseline, 4x4 sub-block tiling, 8x8 DST-VII for I-frame. NOT yet measured: RD gain of multi-size vs 8x8-fixed on real corpus.",
+      "notes": "C9 TRANSFORM SELECTION IN RDO WIRED. Encoder tries 8x8 DCT + 4x4 sub-block tiling + 8x8 DST-VII (I-frame only) and picks best RD via trellis. Next: (1) add 16x16 and 32x32 transform candidates to RDO loop for large smooth blocks, (2) measure SSIM-per-byte on real corpus with multi-size vs 8x8-fixed, (3) add transform selection signaling in bitstream, (4) large-block partitioning (C26 GAAD) interplay with TU tree."
     },
     {
       "id": "C10",
