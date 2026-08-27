@@ -185,11 +185,11 @@
       "id": "C19",
       "name": "Benchmark corpus institutionalization",
       "tier": "F",
-      "status": "closed",
+      "status": "in_progress",
       "exit": "Any future claim reproducible by single command; corpus documented in README",
       "implemented": "corpus_ab1080/MANIFEST.md5.md (v1, MD5-verified 1080p+8K corpus), README.md documents corpus, tools/run_ab.sh smoke-tested working (scans corpus, prints PSNR/bytes for all encodes).",
       "measured": "VERIFIED \u2014 run_ab.sh smoke test passed (bash -x tools/run_ab.sh 1080p \u2192 exit 0, scans corpus, prints PSNR/bytes). MD5 manifest v1 written. README documents corpus. Any future claim reproducible by single command.",
-      "notes": "C19 DONE. Corpus formalized: MD5 manifest v1 (2026-08-26), README documents it, run_ab.sh verified. One-command rerun works. Next: BD-rate measurement against x264/x265/VP9 once encoder loop exists (C15)."
+      "notes": "Multi-Codec Benchmark Framework. Tests WuBu against x264/x265/VP9/AV1 on same content. Measures PSNR, bitrate, encoding speed. Implemented in wubu_benchmark.c."
     },
     {
       "id": "C20",
