@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-26T20:08:06.922027",
+  "timestamp": "2026-08-26T20:49:28.626366",
   "categories": [
     {
       "id": "C1",
@@ -86,10 +86,10 @@
       "name": "Variable-size transforms",
       "tier": "B",
       "status": "in_progress",
-      "exit": "Full transform-size matrix tested on all segments; >=12% over 8x8-fixed",
-      "implemented": "wubu_transform.c + wubu_transform.h: full DCT2 family (4x4 via dct4_fwd/dct4_inv, 8x8 via wubu_tr_fwd/tr_inv, 16x16 via dct16_fwd/dct16_inv, 32x32 via dct32_fwd/dct32_inv) + 4x4 DST-VII (dst7_fwd4/dst7_inv4) for intra blocks. Per-size qmats: qmat_4x4 (JPEG-style), qmat_8x8 (JPEG-style), qmat_16x16 (JPEG-style), qmat_32x32 (flat). C9 encoder integration DONE: wubu_encode_frame tries {8x8 DCT, 8x8 DST-VII (I-frame only), 4x4 sub-block tiling} and picks best RD (SSE+lambda*bits) via trellis RDOQ. Encoder 5/5 green.",
-      "measured": "IN PROGRESS: encoder compiles and passes 5/5 tests green. Transform selection RDO wired: 8x8 DCT baseline, 4x4 sub-block tiling, 8x8 DST-VII for I-frame. NOT yet measured: RD gain of multi-size vs 8x8-fixed on real corpus.",
-      "notes": "C9 TRANSFORM SELECTION IN RDO WIRED. Encoder tries 8x8 DCT + 4x4 sub-block tiling + 8x8 DST-VII (I-frame only) and picks best RD via trellis. Next: (1) add 16x16 and 32x32 transform candidates to RDO loop for large smooth blocks, (2) measure SSIM-per-byte on real corpus with multi-size vs 8x8-fixed, (3) add transform selection signaling in bitstream, (4) large-block partitioning (C26 GAAD) interplay with TU tree."
+      "exit": "Full transform-size matrix tested on all segments; \u226512% over 8\u00d78-fixed",
+      "implemented": "wubu_transform.c + wubu_transform.h \u2014 full DCT family (4\u00d74 via dct4_forward/dct4_inverse, 8\u00d78 via wubu_tr_forward/inverse, 16\u00d716 via dct16_forward/dct16_inverse, 32\u00d732 via dct32_forward/dct32_inverse) + 4\u00d74 DST-VII (dst7_forward_4x4/dst7_inverse_4x4) for intra blocks. Per-size quantization matrices: qmat_4x4, qmat_8x8, qmat_16x16, qmat_32x32 (flat). C9 encoder integration DONE: wubu_encode_frame tries {8x8 DCT, 8x8 DST-VII (I-frame only), 4x4 DCT sub-block tiling} and picks best RD (SSE+\u03bb\u00b7bits) via trellis RDOQ on each candidate. Encoder 5/5 green. Gaps: 16\u00d716/32\u00d732 transform selection in RDO (not yet tried as alternatives in loop), large-block partitioning interplay with TU tree, transform selection signaling in bitstream",
+      "measured": "IN PROGRESS \u2014 encoder compiles and passes 5/5 tests green. Transform selection RDO wired: 8x8 DCT baseline, 4x4 sub-block tiling, 8x8 DST-VII for I-frame. NOT yet measured on real corpus: RD gain of multi-size vs 8x8-fixed. SSIM-per-byte improvement vs flat quant on movie segment remaining.",
+      "notes": "C9 TRANSFORM SELECTION IN RDO WIRED \u2014 encoder now tries 8x8 DCT + 4x4 sub-block tiling + 8x8 DST-VII (I-frame) and picks best RD. Next: (1) add 16\u00d716 and 32\u00d732 transform candidates to encoder RDO loop for large smooth blocks, (2) measure SSIM-per-byte on real corpus with multi-size vs 8\u00d78-fixed, (3) add transform selection signaling in bitstream, (4) large-block partitioning (C26 GAAD) interplay with TU tree."
     },
     {
       "id": "C10",
