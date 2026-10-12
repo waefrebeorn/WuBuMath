@@ -8,21 +8,20 @@ claims underpinning the WuBu Nesting framework:
   2. MobiusAdd.lean — Möbius addition preserves the Poincaré ball
   3. MLACompression.lean — Low-rank KV compression error bound
   4. HyperbolicGyration.lean — gyration preserves the unit ball
-  5. PoincaréBallViz.lean — Visualization of Poincaré ball
-  6. PowerTower.lean — Geometric non-integrality of π^(π^(π^π))
 -/
 
 import WubuProofs.PoincareBall
 import WubuProofs.MobiusAdd
+import WubuProofs.MobiusAddND
 import WubuProofs.MLACompression
 import WubuProofs.HyperbolicGyration
+import WubuProofs.GyrationND
+import WubuProofs.KleinDeck
+import WubuProofs.QuaternionRotation
+import WubuProofs.FiberBundle
 import WubuProofs.NestedHyperbolicSpaces
 import WubuProofs.HolographicOptimizer
-import WubuProofs.FiberBundle
-import WubuProofs.PowerTower
-import LeanCopies
-/- PowerTower.lean (2026-07-10 revision): now a HONEST file of verified
-   numerical bounds on the power tower π↑↑4 (log π > 1, π^π > 27,
-   log L2 > e, log⁴N ∈ (0,1)), all proven with 0 `sorry`. The earlier
-   FALSE lemmas and the logically-invalid "N ∉ ℤ" claim were removed;
-   the integrality question is explicitly retired (see file header). -/
+-- PowerTower.lean NOT imported: it was written against a different mathlib
+-- version and does not compile on 4.29.1 (Real.rpow_lt_rpow_of_exponent_lt
+-- argument order + type mismatches at lines 68,91,92,96,97,101,111,112).
+-- Left in the tree for a future mathlib-port; see VAULT/github-agent-assessment.md.
