@@ -154,6 +154,29 @@ int main(void) {
         if (okak)  ok("[K] Klein A^5 = translation by +5 in x"); else bad("[K] A^k", 0, 1);
     }
 
+    /* [T10] Möbius left-cancellation (1D): (-x) (+) (x (+) y) = y.
+     * The scalar reduction of the gyro-left-cancellation law (Ungar 2005;
+     * Ganea et al. 2018). Load-bearing for the geodesic γ(1)=y endpoint.
+     * The Lean formalization of this identity is the documented hard
+     * rational-identity target (field_simp denominator-matching friction);
+     * here we verify the identity holds numerically to machine precision. */
+    {
+        float maxerr = 0.0f;
+        for (int t = 0; t < 200000; t++) {
+            float x = frnd() * 0.9f, y = frnd() * 0.9f;
+            /* 1D Mobius addition (c=1) */
+            #define MADD(a,b) (((1 + 2*(a)*(b) + (b)*(b))*(a) + (1 - (a)*(a))*(b)) \
+                               / (1 + 2*(a)*(b) + (a)*(a)*(b)*(b)))
+            float lhs = MADD(-x, MADD(x, y));
+            #undef MADD
+            float e = fabsf(lhs - y);
+            if (e > maxerr) maxerr = e;
+        }
+        if (maxerr < TOL) ok("[T10] Mobius left-cancellation (1D)");
+        else bad("[T10] left-cancellation", maxerr, 0.0f);
+        printf("     max |(-x)+(x+y) - y| over 200k trials = %g\n", maxerr);
+    }
+
     printf("=== %s (%d failures) ===\n", fails == 0 ? "ALL PASS" : "FAILURES", fails);
     return fails == 0 ? 0 : 1;
 }
