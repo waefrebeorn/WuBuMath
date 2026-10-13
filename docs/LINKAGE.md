@@ -108,10 +108,32 @@ theorems against the C implementation (run via `make test`):
 | T3 | MobiusAddND ball preservation | max c·\|x⊕y\|² over 5000 pairs | 0.736 < 1 ✅ |
 | T9 | GyrationND inner-product (1.32) | max \|<gyr a,gyr b⟩−⟨a,b⟩\| | 2.2e-08 ✅ |
 | T8 | GyrationND norm (1.33) | max ‖gyr w‖²−‖w‖² | 4.5e-08 ✅ |
+| T10 | Mobius left-cancellation (1D) | max \|(-x)+(x+y)−y\| over 200k | 1.3e-05 ✅ |
 | K | KleinDeck ABA=B, B²=translation, A^5=+5 | exact over 1000 pts | all ✅ |
 
 The C code is trusted *because* the Lean theorems hold — not "it mostly
 stays in the ball." This is the bridge the charter requires.
+
+## Non-orientable storage layer (Klein)
+
+The Klein-bottle deck bookkeeping (`KleinDeck.lean`, 12 theorems) is the
+storage substrate that sits beside the orientable hyperbolic nesting chain.
+See [`theory/Klein_Nesting.md`](theory/Klein_Nesting.md) for the full note.
+
+| KleinDeck theorem | Storage capability |
+|---|---|
+| B² = translation by (0,2) (`glide_sq`) | **Orientation restoration** — two crossings return to orientable side; sign bit needs only single-crossing tracking |
+| ABA = B (`deck_relation`) | Group is ℤ ⋊ ℤ; storage addressing is canonical |
+| A^k = +k (`deckA_iterate_*`) | **Defrag by translation** — shift fundamental domain k units, order-independent (⟨A⟩ ≅ ℤ) |
+| `klein_orientation_bookkeeping` | The sign bit: B flips, A preserves, B² restores — one bit per datum |
+
+The non-orientable level provides **free handedness-bit capacity** — a bit
+that costs no dimension, only bookkeeping. This is why natural image
+patches concentrate on a Klein bottle (Carlsson et al.; Love et al.) and
+why KleinVAE (arXiv 2604.23804) uses covering-map reparameterization for
+non-orientable latents. See
+[`theory/Ganea_Isabelle_Linkage.md`](theory/Ganea_Isabelle_Linkage.md) for
+the GyrationND ↔ Ganea 2018 ↔ Isabelle gyrovector-space comparison.
 
 ## The three "load-bearing" theorems
 
