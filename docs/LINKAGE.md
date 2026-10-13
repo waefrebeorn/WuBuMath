@@ -89,14 +89,29 @@ AGI's manifold reasoning stands on.
 | 7 | `GyrationND.lean` | **Gyration preserves ball (nD)** | Gyration stays on-manifold | Hyperbolic layer outputs |
 | 8 | `GyrationND.lean` | **‖gyr‖²=‖w‖² (Ungar 1.33)** | Gyration is norm-preserving | Rotation-equivariant layers |
 | 9 | `GyrationND.lean` | **⟨gyr a,gyr b⟩=⟨a,b⟩ (Ungar 1.32)** | Gyration is an inner-product isometry — *the* rotation property | **Every hyperbolic NN layer** |
-| 10 | `KleinDeck.lean` | B² orientation-preserving; ABA=B | Non-orientable nesting bookkeeping | Klein-bottle storage levels |
+| 10 | `KleinDeck.lean` | B² orientation-preserving; ABA=B; **A^k=+k defrag; orientation bookkeeping** | Non-orientable nesting + storage-defrag | Klein-bottle storage levels |
 | 11 | `QuaternionRotation.lean` | ‖p·q‖²=‖p‖²‖q‖² | SO(4) rotations via quaternions | BSP node splits, 3D rotations |
 | 12 | `FiberBundle.lean` | [Lx,Ly]=Lz; SO(3) closure | Principal-bundle structure | Level-to-level transport |
 | 13 | `NestedHyperbolicSpaces.lean` | φ-curvature progression | Nesting-chain invariants | Multi-level curvature schedule |
 | 14 | `HolographicOptimizer.lean` | g=q·2π+r; soul/echo recovery | Gradient decomposition | Lazarus optimizer |
 | 15 | `ParallelTransport.lean` | PT is a Riemannian isometry **[GAP C003]** | On-manifold guarantee for SGD/FM | Riemannian optimization |
-| 16 | `ExpMapBall.lean` | c·‖exp_0^c(v)‖²<1 **[GAP C002]** | ODE integrator never escapes | Flow-matching P-frames |
+| 16 | `ExpMapBall.lean` | c·‖exp_0^c(v)‖²<1 (total, incl. v=0) **[GAP C002]** | ODE integrator never escapes | Flow-matching P-frames |
 | 17 | `GeodesicInterp.lean` | γ(0)=x **[GAP C009]** | Flow-rollout path endpoints | Multi-keyframe interpolation |
+
+## C11 bridge (the proven theorems, verified in C)
+
+`src/tests/test_lean_bridge.c` numerically verifies the source-of-truth
+theorems against the C implementation (run via `make test`):
+
+| Tag | Theorem | C check | Result |
+|---|---|---|---|
+| T3 | MobiusAddND ball preservation | max c·\|x⊕y\|² over 5000 pairs | 0.736 < 1 ✅ |
+| T9 | GyrationND inner-product (1.32) | max \|<gyr a,gyr b⟩−⟨a,b⟩\| | 2.2e-08 ✅ |
+| T8 | GyrationND norm (1.33) | max ‖gyr w‖²−‖w‖² | 4.5e-08 ✅ |
+| K | KleinDeck ABA=B, B²=translation, A^5=+5 | exact over 1000 pts | all ✅ |
+
+The C code is trusted *because* the Lean theorems hold — not "it mostly
+stays in the ball." This is the bridge the charter requires.
 
 ## The three "load-bearing" theorems
 
