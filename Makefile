@@ -133,6 +133,14 @@ $(BIN)/test_pgeom: $(SRC)/tests/test_wubu_poincare_geom.c $(SRC)/math/wubu_poinc
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $(SRC)/math/wubu_poincare_geom.c $(SRC)/math/wubu_hyperbolic.c $< -o $@ $(LDFLAGS)
 
+# Lean-bridge property tests: verify the Lean-proven invariants hold in C.
+# Theorems T3 (MobiusAddND ball preservation), T8/T9 (GyrationND norm +
+# inner-product isometry), K (KleinDeck ABA=B, B^2=translation, A^k=+k).
+# See lean/WubuProofs/ and docs/LINKAGE.md for the source-of-truth proofs.
+$(BIN)/test_lean_bridge: $(SRC)/tests/test_lean_bridge.c $(SRC)/math/wubu_hyperbolic.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) $(SRC)/math/wubu_hyperbolic.c $< -o $@ $(LDFLAGS)
+
 # Quaternion operations tests (Hamilton product, SLERP, Poincaré, etc.)
 $(BIN)/test_quat_ops: $(SRC)/tests/test_wubu_quaternion_ops.c $(SRC)/math/wubu_quaternion_ops.c $(SRC)/math/wubu_hyperbolic.c $(SRC)/math/wubu_quaternion.c
 	@mkdir -p $(BIN)
@@ -660,7 +668,7 @@ $(BIN)/test_lorentz_poincare: $(SRC)/tests/test_wubu_lorentz_poincare.c $(SRC)/m
 	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) $(SRC)/math/wubu_lorentz.c $(SRC)/math/wubu_lorentz_poincare.c $(SRC)/math/wubu_poincare_geom.c $< -o $@ $(LDFLAGS)
 
-test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_so3 $(BIN)/test_rep $(BIN)/test_manifold $(BIN)/test_anyon $(BIN)/test_pgeom $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_manifold_ad $(BIN)/test_lorentz $(BIN)/test_lorentz_poincare $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_manifold_clip $(BIN)/test_beam $(BIN)/test_beam_8k $(BIN)/test_decode_quality $(BIN)/test_text_encoder $(BIN)/test_bands $(BIN)/test_lorflow $(BIN)/test_quat_prop $(BIN)/test_arena $(BIN)/test_lorclip $(BIN)/test_hattn $(BIN)/test_hmlr $(BIN)/test_ldirect $(BIN)/test_hkmeans $(BIN)/test_hlin $(BIN)/test_hact $(BIN)/test_uv $(BIN)/test_kodak $(BIN)/test_pframe_ir $(BIN)/test_uv $(BIN)/test_pairs $(BIN)/test_avfid $(BIN)/test_stft $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned
+test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test $(BIN)/nn_test $(BIN)/test_hyperbolic $(BIN)/test_quaternion $(BIN)/test_so3 $(BIN)/test_rep $(BIN)/test_manifold $(BIN)/test_anyon $(BIN)/test_pgeom $(BIN)/test_riemannian_sgd $(BIN)/test_parallel_transport $(BIN)/test_hyperbolic_analytics $(BIN)/test_manifold_ad $(BIN)/test_lorentz $(BIN)/test_lorentz_poincare $(BIN)/test_tangent_flow $(BIN)/test_flow_matching $(BIN)/test_manifold_clip $(BIN)/test_beam $(BIN)/test_beam_8k $(BIN)/test_decode_quality $(BIN)/test_text_encoder $(BIN)/test_bands $(BIN)/test_lorflow $(BIN)/test_quat_prop $(BIN)/test_arena $(BIN)/test_lorclip $(BIN)/test_hattn $(BIN)/test_hmlr $(BIN)/test_ldirect $(BIN)/test_hkmeans $(BIN)/test_hlin $(BIN)/test_hact $(BIN)/test_uv $(BIN)/test_kodak $(BIN)/test_pframe_ir $(BIN)/test_uv $(BIN)/test_pairs $(BIN)/test_avfid $(BIN)/test_stft $(BIN)/test_latent_codec $(BIN)/test_nest_gpt $(BIN)/test_quat_ops $(BIN)/test_canvas_res $(BIN)/test_nested_enc $(BIN)/test_learned $(BIN)/test_lean_bridge
 	@echo "=== VHF Engine Tests ===" && $(BIN)/test_vhf_engine
 	@echo "=== WuBuMath Tests ===" && $(BIN)/wubu_tests
 	@echo "=== Slermed JAX Tests ===" && $(BIN)/jax_test
@@ -749,6 +757,7 @@ test: $(BIN)/test_vhf_engine $(BIN)/test_gaad $(BIN)/wubu_tests $(BIN)/jax_test 
 	@echo "=== .WUBV Container Format ===" && $(BIN)/test_wubuv
 	@echo "=== Density-Peak Clustering ===" && $(BIN)/test_gs $(BIN)/test_tl $(BIN)/test_ir $(BIN)/test_hil $(BIN)/test_st $(BIN)/test_fexp $(BIN)/test_ai2 $(BIN)/test_qr $(BIN)/test_sc $(BIN)/test_bq $(BIN)/test_sp $(BIN)/test_qcodec $(BIN)/test_qi $(BIN)/test_qfinal $(BIN)/test_qz $(BIN)/test_dq $(BIN)/test_scl $(BIN)/test_qsp $(BIN)/test_kfs $(BIN)/test_ksg $(BIN)/test_cv2 $(BIN)/test_dct $(BIN)/test_zr $(BIN)/test_eg2 $(BIN)/test_db $(BIN)/test_ip $(BIN)/test_me $(BIN)/test_yuv $(BIN)/test_mvp $(BIN)/test_dpb $(BIN)/test_cabac $(BIN)/test_part $(BIN)/test_p2 $(BIN)/test_mc2 $(BIN)/test_ang $(BIN)/test_sao $(BIN)/test_ssim $(BIN)/test_rdo $(BIN)/test_scene $(BIN)/test_color $(BIN)/test_nal $(BIN)/test_bf2 $(BIN)/test_fgs $(BIN)/test_hdr $(BIN)/test_nc $(BIN)/test_360 $(BIN)/test_db2 $(BIN)/test_cclm $(BIN)/test_trel $(BIN)/test_sdct $(BIN)/test_fm $(BIN)/test_hdpc
 	@echo "=== Graph-to-Ball Embedding ===" && $(BIN)/test_g2b
+	@echo "=== Lean-bridge property tests (T3/T8/T9/K) ===" && $(BIN)/test_lean_bridge
 	@echo "=== Hierarchical Retrieval ===" && $(BIN)/test_hr
 	@echo "=== Hyperbolic Decision Tree ===" && $(BIN)/test_hdt
 	@echo "=== Hyperbolic Autoencoder ===" && $(BIN)/test_hae
