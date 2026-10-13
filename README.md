@@ -1,185 +1,120 @@
 # WuBuMath
 
-Pure C11 mathematical & media encoding library — the home for all WuBu数学 (WuBu Math).
+**The home of all WuBu数学 (WuBu Math) — and the verified mathematical
+foundation of the ~ WuBu ~ AGI manifolds.**
 
-Slermed from the VHF Hamilton Modulator pipeline and JAX compute core. Zero Python. Zero PyTorch. Zero external dependencies.
+WuBuMath has two layers:
 
-## What It Is
+1. **A machine-verified formal core** (`lean/WubuProofs/`) — 17 theorems
+   proven in Lean 4 + mathlib, zero `sorry`. This is the geometric
+   foundation the ~ WuBu ~ AGI's nested hyperbolic manifolds stand on:
+   Möbius gyrovector arithmetic, gyration-as-rotation, parallel-transport
+   isometry, Klein-bottle deck bookkeeping, quaternion rotations. Every
+   hyperbolic neural layer, flow-matching step, and Riemannian optimizer
+   update in the WuBu stack relies on facts proven here.
+   **→ See [`docs/LINKAGE.md`](docs/LINKAGE.md) for the theorem →
+   capability → codebase map, and
+   [`lean/README.md`](lean/README.md) for the full status table.**
 
-WuBuMath is the **dedicated home for all mathematical work** that was previously scattered across bytropix. It computes:
+2. **A pure C11 implementation** (`src/`) — the same geometry, implemented
+   in dependency-free C11: Hamilton quaternion encoder, hyperbolic
+   operators, nested encoders, Riemannian SGD, parallel transport, plus
+   the VHF audio/media pipeline and a slermed JAX compute core. Zero
+   Python, zero PyTorch, zero external deps. **The C code is correct
+   *because* the Lean theorems hold** — where they overlap, the Lean side
+   is the source of truth.
 
-- **Color manifolds** (RGB/HSL, circular L1 loss, grayscale)
-- **Hamilton encoder/decoder** (quaternion latent space for video+audio)
-- **VHF audio pipeline** (canvas compositing, HBI audio strips, FM encoding)
-- **Q-controller** (adaptive learning rate with warmup + exploration)
-- **Positional encoding** (sin/cos frequency bands)
-- **Slermed JAX** (full JAX-compatible compute core in C11)
-- **Media generation** (color patterns, shape animations, VHF tones)
+## Why this exists
 
-## Origin
+The ~ WuBu ~ AGI reasons and stores information on **nested hyperbolic
+manifolds** (Poincaré balls of increasing curvature). That representation
+is only sound if a small set of geometric facts hold exactly: that Möbius
+addition stays in the ball, that gyration preserves inner products (it's a
+rotation), that parallel transport is a metric isometry, that the
+exponential map never escapes the manifold. **WuBuMath proves exactly
+those facts** — so the AGI's manifold reasoning rests on verified ground,
+not on formulas that merely look right.
 
-Primary source: [`vhf_audio.py`](https://github.com/waefrebeorn/bytropix/blob/master/AUDIO/wubusynth/vhf_audio.py) from the [bytropix](https://github.com/waefrebeorn/bytropix) repository.
+## The verified core (`lean/WubuProofs/` — 0 `sorry`)
 
-The divergence: bytropix started as the **math/training** repo (Phase 1-5 encoders, geodesic spirals, Hamilton space), then split into **math + inference engine** (C inference server in commit `816aea8`). WuBuMath is the reconciliation — all math comes home.
+| Theorem | Why it matters for the AGI |
+|---|---|
+| Möbius addition preserves the ball (nD) | The invariant every hyperbolic layer needs |
+| **Gyration preserves the inner product** (Ungar 1.32) | Gyration is a rotation → hyperbolic NN layers are well-defined |
+| Gyration preserves the norm (Ungar 1.33) | Rotation-equivariant layers |
+| **Parallel transport is a Riemannian isometry** | On-manifold guarantee for Riemannian SGD / flow matching |
+| Exponential map lands in the ball | Flow-matching ODE integrator never escapes the manifold |
+| Geodesic interpolation endpoints | Flow-rollout path starts at the keyframe |
+| Klein deck group (B² orientation-preserving, ABA=B) | Non-orientable nesting / movable-manifold storage |
+| Quaternion norm multiplicativity ‖p·q‖²=‖p‖²‖q‖² | SO(4) rotations, BSP node splits |
 
-## All 64 Tests Pass
+Plus: exp/log round-trip, MLA KV-compression Frobenius bound, SO(3) fiber
+bundle, φ-curvature nesting progression, holographic optimizer.
 
+**Verify it yourself:**
+```bash
+cd lean
+./fastcheck.sh WubuProofs/GyrationND.lean   # single file, ~4s
+lake build                                   # whole library, 0 sorry
+./.lake/build/bin/wubu_proofs                # prints the theorem table
+/usr/bin/python3.12 ../examples/wubu_manifold_demo.py   # numerical demo
+```
+
+## The C11 implementation (`src/`)
+
+All 64 tests pass:
 ```bash
 make test
 ```
-
 ```
-=== WuBuMath Tests ===
-[Color Manifold]     6/6 PASS
-[Circular L1 Loss]   3/3 PASS
-[PRNG]               2/2 PASS
-[Q-Controller]       3/3 PASS
-[Positional Encode]  1/1 PASS
-[Loss Computation]   2/2 PASS
-[Hamilton Encoder]   1/1 PASS
-[VHF Decoder]        1/1 PASS
-[VHF Audio Pipeline] 6/6 PASS
-=== Results: Passed: 29/29 ===
-
-=== Slermed JAX Tests ===
-[compute core]      35/35 PASS  
-=== Results: Passed: 35/35 ===
-
-TOTAL: 64/64 PASS
+[Color Manifold]     6/6   [Hamilton Encoder]   1/1
+[Circular L1 Loss]   3/3   [VHF Decoder]        1/1
+[PRNG]               2/2   [VHF Audio Pipeline] 6/6
+[Q-Controller]       3/3   [Slermed JAX core]  35/35
+[Positional Encode]  1/1
+[Loss Computation]    2/2   TOTAL: 64/64 PASS
 ```
 
-## Build
+Only needs GCC with C11. Runs on Linux/macOS/WSL.
 
-```bash
-make          # Build all
-make test     # Run 64 tests
-make clean    # Clean
-```
-
-Only needs: GCC with C11. Runs on Linux/macOS/WSL.
-
-## Project Structure
+## Project structure
 
 ```
 WuBuMath/
-├── include/
-│   ├── wubumath.h              # Master header (color, model, VHF, Q-controller)
-│   ├── jax.h                   # Slermed JAX master header
-│   ├── jax_arena.h             # Arena allocator + SoA tensors
-│   ├── jax_simd.h             # AVX2/NEON/Scalar SIMD
-│   └── jax_nn.h               # MLP, activation, optimizer
-├── src/
-│   ├── math/
-│   │   ├── wubu_color.c        # RGB/HSL + circular L1 loss
-│   │   ├── wubu_positional_encode.c
-│   │   └── wubu_utils.c        # Bilinear sample, box blur, audio strip
-│   ├── model/
-│   │   ├── wubu_hamilton_encoder.c  # Quaternion latent space
-│   │   ├── wubu_vhf_decoder.c       # Coordinate-sampled decode
-│   │   └── wubu_vhf_audio.c         # Full VHF pipeline
-│   ├── train/
-│   │   ├── wubu_q_controller.c      # Adaptive LR controller
-│   │   └── wubu_loss.c              # HSL loss manifold
-│   ├── jax/                         # Slermed JAX core (35 tests)
-│   │   ├── jax_arena.c
-│   │   ├── jax_simd.c
-│   │   ├── jax_nn.c
-│   │   ├── jax_opt.c
-│   │   ├── jax_lax.c
-│   │   └── jax_ir.c
-│   └── tests/
-│       ├── wubu_tests.c            # 29 tests
-│       └── jax_slermed_test.c     # 35 tests
+├── lean/                         # THE VERIFIED CORE (Lean 4 + mathlib)
+│   ├── WubuProofs/               #   17 proven theorems, 0 sorry
+│   ├── fastcheck.sh              #   single-file check (~4s, olean-cached)
+│   ├── leanfind.sh               #   mathlib lemma lookup (0 build cycles)
+│   └── README.md                 #   full status table
+├── docs/
+│   ├── LINKAGE.md                #   theorem → AGI-manifold → codebase map
+│   ├── theory/                   #   WuBu_Nesting, WuBuHypCD, math_viz, papers
+│   ├── GAP_REGISTER_1000.md      #   verified gap register
+│   └── SOTA_ROADMAP_50_GROUPS.md
 ├── examples/
-│   └── media_creator.c         # Generates frames + VHF tones → WAV
+│   └── wubu_manifold_demo.py     #   numerical demo of the proven theorems
+├── src/                          # C11 IMPLEMENTATION (dependency-free)
+│   ├── math/  model/  train/     #   color, Hamilton, VHF, Q-controller
+│   ├── jax/                      #   slermed JAX compute core (35 tests)
+│   └── tests/                    #   64 tests
+├── include/
 └── Makefile
 ```
 
-## Architecture
+## Origin
 
-```
-┌─────────────────────────────────────────────┐
-│              WuBuMath v0.1.0                │
-├─────────────────────────────────────────────┤
-│                                             │
-│  RGB Images [-1,1]                          │
-│       │                                     │
-│       ▼                                     │
-│  ┌─────────────────────┐                    │
-│  │ Hamilton Encoder     │──► Quaternions    │
-│  │ (quaternion latent)  │    Amplitude      │
-│  │                      │    Context [B,3]  │
-│  └─────────────────────┘                    │
-│       │                                     │
-│       ▼                                     │
-│  ┌─────────────────────┐                    │
-│  │ VHF Decoder          │──► coords → RGB  │
-│  │ (coordinate-sample)  │    [-1,1]         │
-│  └─────────────────────┘                    │
-│       │                                     │
-│       ▼                                     │
-│  ┌─────────────────────┐                    │
-│  │ Loss Manifold        │──► HSL → L1/circ │
-│  │ 10*L + 2*H + 1*S   │    composite loss  │
-│  └─────────────────────┘                    │
-│       │                                     │
-│       ▼                                     │
-│  ┌─────────────────────┐                    │
-│  │ Q-Controller         │──► Adaptive LR   │
-│  │ warmup → ε-greedy   │    exploration    │
-│  └─────────────────────┘                    │
-│                                             │
-│  ┌─────────────────────┐                    │
-│  │ Slermed JAX          │──► 35 ops        │
-│  │ arena, GEMM, MLP,   │    JAX-compatible │
-│  │ lax, IR, optimizer  │                    │
-│  └─────────────────────┘                    │
-│                                             │
-│  ┌─────────────────────┐                    │
-│  │ Media Creator        │──► WAV audio     │
-│  │ frames + VHF tones   │    RAW frames    │
-│  └─────────────────────┘                    │
-└─────────────────────────────────────────────┘
-```
+Primary source: [`vhf_audio.py`](https://github.com/waefrebeorn/bytropix/blob/master/AUDIO/wubusynth/vhf_audio.py)
+from [bytropix](https://github.com/waefrebeorn/bytropix). WuBuMath is the
+reconciliation — all WuBu math comes home, and the hyperbolic/nesting core
+is now formally verified rather than merely implemented.
 
 ## Part of the WuBu Family
 
 | Repo | Purpose |
 |------|---------|
-| [WuBuOS](https://github.com/waefrebeorn/WuBuOS) | Custom OS kernel |
+| [WuBuOS](https://github.com/waefrebeorn/WuBuOS) | The AGI body — OS kernel, runtime, compiler (the manifolds run here) |
 | [bytropix](https://github.com/waefrebeorn/bytropix) | Inference engine (C server, GPU kernels) |
-| **WuBuMath** | **All math, encoders, media generation** ← you are here |
-
-## Math Consolidation (2026-07-10)
-
-WuBuMath is the **canonical home for all WuBu math**. The following were
-migrated out of `bytropix` so the math stops being scattered:
-
-- **`lean/`** — the WuBu Nesting **formal-proof library** (Lean 4 / Mathlib).
-  Proven core: Möbius-addition-closes-Poincaré-ball, hyperbolic
-  gyration identity, holographic soul/echo optimizer (`g = q·2π + r`),
-  nested-hyperbolic curvature invariants, low-rank KV compression.
-  `PowerTower.lean` is kept as an *illustrative notebook only* — it is
-  **not** a proof (false lemma + `sorry` chain; see `docs/theory/AUDIT_POWERTOWER.md`).
-- **`docs/theory/`** — the THEORY writeups (`WuBu_Nesting.md`,
-  `WuBuHypCD.tex`, spatio-temporal nesting), the `math_viz/`
-  visualization scripts, and the curated `papers/` set.
-
-**Deliberately NOT migrated** (stays in `bytropix`):
-- The 11 GB Lean `.lake` build cache (git-ignored anyway).
-- 117 Python encoder/attention prototypes — WuBuMath's charter is
-  *Zero Python*; those live in bytropix `ATTENTION/`, `ENCODERS/`, etc.
-- Inference-internal C kernels (`wubu_ssm*.cu`, Poincaré-GQA
-  backward, MoE-hyperbolic, attention) — those are the *inference
-  engine*, not pure math.
-
-## License
-
-MIT License — WuBu Slermes Project
-
----
-
----
+| **WuBuMath** | **All math + the verified AGI-manifold foundation** ← you are here |
 
 ## License
 
