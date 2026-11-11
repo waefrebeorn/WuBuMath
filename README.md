@@ -2,6 +2,8 @@
 
 > Pure C11, zero third-party deps, 78 tests green. Slermed from Python/JAX.
 
+> **~WuBu~ AGI** — one system, many repositories. This is the **math library and codec**. The Body is [WuBuOS](https://github.com/waefrebeorn/WuBuOS), the Brain wubuwizard, the Compiler WuBuNOS.
+
 ## What this is
 
 Two things in one repo:
