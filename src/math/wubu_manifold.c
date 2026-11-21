@@ -5,6 +5,7 @@
  */
 
 #include "wubu_manifold.h"
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 

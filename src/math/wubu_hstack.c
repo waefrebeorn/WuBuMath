@@ -55,7 +55,7 @@ int wubu_hstack_forward(const float* x,const int* adj_idx,
          * call hgnn with identity W to get aggregated+projected, but we
          * want agg BEFORE linear... For gate purposes: run hgnn layer
          * (aggregate+linear), then blend: out = mobius_add(cur, alpha*agg).*/
-        if(wubu_hgnn_layer(cur,adj_idx,adj_ptr,edge_weight,Wl,N,D,c,agg)!=0){
+        if(wubu_hgnn_layer((const double*)cur,(const int*)adj_idx,N,adj_ptr?adj_ptr[N]:0,D,(const double*)Wl,0.0,c,(double*)agg)!=0){
             free(cur);free(agg);return -2;
         }
         /* mobius residual: cur' = cur ⊕ (alpha ⊗ agg_dir) where

@@ -5,6 +5,7 @@
  */
 
 #include "jax_nn.h"
+#include <stdlib.h>
 #include "jax_arena.h"
 #include "jax_simd.h"
 #include <math.h>

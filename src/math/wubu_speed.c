@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #define _DEFAULT_SOURCE
 #define M_PI 3.14159265358979f
@@ -20,8 +21,12 @@ typedef struct { int has_avx2,has_sse41,n_cores; } SpeedProfileInternal;
 
 static void detect_cpu(SpeedProfileInternal* sp){
     memset(sp,0,sizeof(*sp));
+#if defined(_WIN32) || defined(__MINGW32__)
+    sp->n_cores = 4; /* fallback */
+#else
     sp->n_cores=(int)sysconf(_SC_NPROCESSORS_ONLN);
     if(sp->n_cores<1)sp->n_cores=1;
+#endif
 #if defined(__AVX2__)
     sp->has_avx2=1;
 #endif

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 /*
  * jax_arena.h  --  PufferC/JaxRL Arena Allocator + SoA Tensor Infrastructure
  *
@@ -54,7 +55,7 @@ static inline void jax_arena_init(JaxArena* a, void* backing, size_t cap) {
 
 /* Create arena with malloc (for host) */
 static inline int jax_arena_create(JaxArena* a, size_t cap) {
-    void* mem = aligned_alloc(JAX_ARENA_ALIGN, cap);
+    void* mem = malloc(cap);
     if (!mem) return -1;
     jax_arena_init(a, mem, cap);
     return 0;

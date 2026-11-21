@@ -41,7 +41,11 @@ log = sh("git log --grep='GAP CLOSURE'")
 closed_ids = sorted(set(re.findall(r"GAP CLOSURE ([A-Z]\d{3})", log)))
 bugs = re.findall(r"bug\s*#(\d+)", log)
 n_bugs = max([int(b) for b in bugs], default=15)
-reg = open("docs/GAP_REGISTER_1000.md").read()
+reg = ""
+try:
+    reg = open("docs/GAP_REGISTER_1000.md").read()
+except FileNotFoundError:
+    pass
 bugs += re.findall(r"bug\s*#(\d+)", reg)
 n_bugs = max([int(b) for b in bugs], default=0)
 

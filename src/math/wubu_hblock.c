@@ -11,6 +11,7 @@
  * analogue of Euclidean residual add). All ops on-ball by construction.
  */
 #include "wubu_hblock.h"
+#include "wubu_hnorm.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>

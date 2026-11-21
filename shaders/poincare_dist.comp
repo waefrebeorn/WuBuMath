@@ -1,0 +1,27 @@
+#version 450 core
+// Poincare distance (GLSL compute shader)
+layout(local_size_x = 256) in;
+layout(std430, binding = 0) readonly buffer BufA { double a[]; };
+layout(std430, binding = 1) readonly buffer BufB { double b[]; };
+layout(std430, binding = 2) writeonly buffer BufOut { double out[]; };
+uniform int dim;
+uniform double c;
+uniform int n_pairs;
+void main() {
+    uint idx = gl_GlobalInvocationID.x;
+    if (idx >= uint(n_pairs)) return;
+    int base = int(idx) * dim;
+    double na2 = 0.0, nb2 = 0.0, ab = 0.0;
+    for (int i = 0; i < dim; i++) {
+        na2 += a[base+i]*a[base+i];
+        nb2 += b[base+i]*b[base+i];
+        ab += a[base+i]*b[base+i];
+    }
+    double num = 2.0 * (na2 + nb2 - 2.0*ab);
+    double den = (1.0 - c*na2) * (1.0 - c*nb2);
+    double arg = 1.0 + c * num / den;
+    if (arg < 1.0) arg = 1.0;
+    out[idx] = (1.0/sqrt(c)) * acosh(arg);
+}
+EOF
+echo done

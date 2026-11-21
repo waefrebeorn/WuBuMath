@@ -9,6 +9,7 @@
  */
 #define M_PI 3.14159265358979f
 #include "wubu_tools.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>

@@ -3,6 +3,7 @@
  */
 
 #include "jax_simd.h"
+#include <stdlib.h>
 
 /* Batch GEMM for sequence processing: [batch, M, K] @ [batch, K, N] -> [batch, M, N] */
 void jax_batch_gemm(const float* A, const float* B, float* C, int batch, int M, int N, int K) {

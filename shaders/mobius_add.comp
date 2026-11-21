@@ -1,0 +1,36 @@
+#version 450 core
+// Mobius addition on Poincare ball (GLSL compute shader)
+// Each thread handles one dimension of one vector pair
+
+layout(local_size_x = 256) in;
+
+layout(std430, binding = 0) readonly buffer BufX { double x[]; };
+layout(std430, binding = 1) readonly buffer BufY { double y[]; };
+layout(std430, binding = 2) writeonly buffer BufOut { double out[]; };
+
+uniform int dim;
+uniform double c;
+uniform int n_pairs;
+
+void main() {
+    uint idx = gl_GlobalInvocationID.x;
+    if (idx >= uint(n_pairs * dim)) return;
+    int pair = int(idx) / dim;
+    int d = int(idx) % dim;
+    
+    // compute dot products (need reduction - simplified per-thread)
+    // For correctness, precompute nx2, ny2, xy on CPU; here we approximate
+    double nx2 = 0.0, ny2 = 0.0, xy = 0.0;
+    int base = pair * dim;
+    for (int i = 0; i < dim; i++) {
+        nx2 += x[base+i]*x[base+i];
+        ny2 += y[base+i]*y[base+i];
+        xy += x[base+i]*y[base+i];
+    }
+    double denom = 1.0 + 2.0*c*xy + c*c*nx2*ny2;
+    double num_x = (1.0 + 2.0*c*xy + c*ny2) * x[base+d];
+    double num_y = (1.0 - c*nx2) * y[base+d];
+    out[base+d] = (num_x + num_y) / denom;
+}
+EOF
+echo done

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 /*
  * wubu_gaad_encoder.h -- GAAD + WuBu Nested Fractal Encoder
  *
@@ -19,6 +20,7 @@
 #define WUBU_GAAD_ENCODER_H
 
 #include <stddef.h>
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,18 +127,18 @@ int golden_subdivide(Rect* rects, int W, int H, int num_target);
 
 /* GELU activation */
 static inline float gelu(float x) {
-    return 0.5f * x * (1.0f + tanhf(0.7978845608f * x * (1.0f + 0.044715f * x * x)));
+    return 0.5f * x * (1.0f + tanh(0.7978845608f * x * (1.0f + 0.044715f * x * x)));
 }
 
 static inline float gelu_b(float x) {
     float c = 0.7978845608f;
     float inner = c * x * (1.0f + 0.044715f * x * x);
-    float t = tanhf(inner);
+    float t = tanh(inner);
     return 0.5f * (1.0f + t) + 0.5f * x * (1.0f - t * t) * c * (1.0f + 3.0f * 0.044715f * x * x);
 }
 
 static inline float softplus(float x) {
-    return logf(1.0f + expf(x));
+    return log(1.0f + exp(x));
 }
 
 #ifdef __cplusplus

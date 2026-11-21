@@ -6,6 +6,7 @@
  */
 
 #include "wubu_hyperbolic.h"
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 

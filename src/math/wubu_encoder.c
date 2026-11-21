@@ -21,6 +21,7 @@
 #include "wubu_fastmode.h"
 #include "wubu_intra.h"
 #include "wubu_transform.h"
+#include "wubu_trellis.h"
 #include "wubu_bframe2.h"
 #include "wubu_motionest.h"
 #include "wubu_deblock.h"

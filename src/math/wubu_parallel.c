@@ -136,7 +136,7 @@ void wubu_par_dct_quantize(const uint8_t* residual,int* output,
                             ThreadPool* tp){
     int nbx=W/8,nby=H/8,n_blocks=nbx*nby*3;
     DctJob* jobs_data=malloc(sizeof(DctJob)*(size_t)n_blocks);
-    void** jobs=malloc(sizeof(void*)*(size_t)n_blocks);
+    void (**jobs)(void*)=malloc(sizeof(void(*)(void*))*(size_t)n_blocks);
     void** args=malloc(sizeof(void*)*(size_t)n_blocks);
     
     int blocks_per_thread=(n_blocks+tp->num_threads-1)/tp->num_threads;

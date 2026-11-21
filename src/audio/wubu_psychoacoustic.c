@@ -14,6 +14,7 @@
  * the "resolution cheat" applied to the audio sideband.
  */
 #include "wubu_psychoacoustic.h"
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 

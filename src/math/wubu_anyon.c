@@ -112,9 +112,9 @@ static AnyonSystem *alloc_sys(int k) {
     s->n = k + 1;
     int n3 = s->n * s->n * s->n;
     int n6 = n3 * s->n * s->n;
-    s->fusion = (unsigned char(*)[1])malloc(sizeof(unsigned char) * n3);
-    s->R = (double complex(*)[1])malloc(sizeof(double complex) * n3);
-    s->F = (double complex(*)[1])malloc(sizeof(double complex) * n6);
+    s->fusion = (unsigned char *)malloc(sizeof(unsigned char) * n3);
+    s->R = (double complex *)malloc(sizeof(double complex) * n3);
+    s->F = (double complex *)malloc(sizeof(double complex) * n6);
     for (int i = 0; i < n3; i++) { s->fusion[i] = 0; s->R[i] = 0; }
     for (int i = 0; i < n6; i++) s->F[i] = 0;
     return s;

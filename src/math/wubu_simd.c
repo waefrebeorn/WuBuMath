@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 /*
  * wubu_simd.c -- SIMD-accelerated quaternion operations
  * AVX2/SSE4 paths for Hamilton product, SLERP, DCT, and ME SAD.
@@ -9,6 +10,7 @@
  * 3. DCT butterfly operations (8x8 blocks × channels × frames)
  */
 #include "wubu_simd.h"
+#include <math.h>
 
 #if defined(__AVX2__)
 #include <stdint.h>
@@ -150,7 +152,7 @@ void wubu_simd_normalize(float* q){
         _mm_storeu_ps(q,_mm_mul_ps(v,inv));
     }
 #else
-    float n=sqrtf(q[0]*q[0]+q[1]*q[1]+q[2]*q[2]+q[3]*q[3]);
+    float n=sqrt(q[0]*q[0]+q[1]*q[1]+q[2]*q[2]+q[3]*q[3]);
     if(n>1e-10f){q[0]/=n;q[1]/=n;q[2]/=n;q[3]/=n;}
 #endif
 }
