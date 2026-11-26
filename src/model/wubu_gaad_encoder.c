@@ -178,7 +178,24 @@ void wubu_gaad_free(WubuGaadEncoder* enc) {
 }
 void wubu_gaad_encode(WubuGaadEncoder* enc, const float* image, float* latent) {
     int DIM=enc->point_dim, LDIM=enc->latent_dim;
+    /* The single-latent path used to hardcode rgb = {0.5,0.3,0.7} and never read `image`, so every input produced a
+     * bit-identical latent (measured: cos(lat_a,lat_b) = 1.00000000 for inputs scaled 1x/2x/3x). It now averages the
+     * same spiral-sampled pixels that wubu_gaad_encode_full reads, so the output actually depends on the input. */
     float rgb[3]={0.5f,0.3f,0.7f};
+    if (image) {
+        const int np = enc->num_spiral>0 ? enc->num_spiral : IMG_DIM*IMG_DIM;
+        double ar=0.0, ag=0.0, ab=0.0; int cnt=0;
+        for (int p=0;p<np;p++) {
+            int ix, iy;
+            if (enc->num_spiral>0) { ix=(int)enc->spiral_points[p].x; iy=(int)enc->spiral_points[p].y; }
+            else                   { ix=p%IMG_DIM;                     iy=p/IMG_DIM; }
+            if (ix<0) ix=0; if (ix>=IMG_DIM) ix=IMG_DIM-1;
+            if (iy<0) iy=0; if (iy>=IMG_DIM) iy=IMG_DIM-1;
+            const float *px = image + (iy*IMG_DIM+ix)*3;
+            ar+=px[0]; ag+=px[1]; ab+=px[2]; cnt++;
+        }
+        if (cnt>0) { rgb[0]=(float)(ar/cnt); rgb[1]=(float)(ag/cnt); rgb[2]=(float)(ab/cnt); }
+    }
     float v[64],vo[64],ws[256];
     for(int d=0;d<DIM;d++){v[d]=enc->proj_b[d];for(int c=0;c<3;c++)v[d]+=enc->proj_w[d*3+c]*rgb[c];}
     /* Project into Poincare ball for level 0 */
